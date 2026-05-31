@@ -113,7 +113,12 @@ const M = {
         this.fillSel(this.el('f_CODMAR'), [], '— elegí cliente —');
         this.clearGrids(); this.el('formErr').textContent = '';
     },
-    nuevo() { this.clear(); this.el('f_FDEODM').value = this.DEF.fechaDisp; this.setMode('create'); this.addProc(); this.addPre(); setTimeout(() => this.el('f_CODCLI').focus(), 100); },
+    nuevo() {
+        this.clear(); this.el('f_FDEODM').value = this.DEF.fechaDisp;
+        this.el('f_CODEDM').value = '1';   // Pendiente por defecto
+        this.setMode('create'); this.addProc(); this.addPre();
+        setTimeout(() => this.el('f_CODCLI').focus(), 100);
+    },
     editar() { if (this.currentId) this.setMode('edit'); },
     cancelar() { this.clear(); this.setMode('idle'); },
 
