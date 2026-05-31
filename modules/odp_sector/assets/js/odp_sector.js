@@ -54,6 +54,11 @@
             });
         }
         document.getElementById('resumen').textContent = rows.length + ' proceso(s) en el sector';
+        var b = document.getElementById('btnImprimir');
+        if (b) b.href = 'print.php?' + new URLSearchParams({
+            etapa: document.getElementById('fSector').value,
+            q: document.getElementById('fq').value.trim()
+        }).toString();
     }
 
     document.getElementById('btnFiltrar').addEventListener('click', load);

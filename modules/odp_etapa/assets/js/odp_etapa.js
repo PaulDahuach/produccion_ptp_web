@@ -69,7 +69,11 @@
         document.getElementById('resumen').textContent = rows.length + ' orden(es)';
     }
 
-    function load() { loadResumen(); loadList(); }
+    function load() {
+        loadResumen(); loadList();
+        var b = document.getElementById('btnImprimir');
+        if (b) b.href = 'print.php?' + params().toString();
+    }
 
     document.getElementById('btnFiltrar').addEventListener('click', load);
     document.getElementById('btnReload').addEventListener('click', load);

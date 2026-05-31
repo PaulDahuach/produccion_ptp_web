@@ -5,6 +5,7 @@ require_once __DIR__ . '/../../includes/layout.php';
 auth_require_login();
 
 module_head('Órdenes de Proceso x Etapa', 'bi-diagram-3',
+    '<a class="btn btn-outline-light btn-sm me-2" id="btnImprimir" target="_blank" href="#"><i class="bi bi-printer me-1"></i>Imprimir</a>' .
     '<button class="btn btn-outline-light btn-sm" id="btnReload"><i class="bi bi-arrow-clockwise me-1"></i>Refrescar</button>');
 ?>
 <link href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css" rel="stylesheet">
