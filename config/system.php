@@ -33,16 +33,29 @@ return [
     'theme'       => 'dark',
 
     'menu' => [
+        // Consultas (CONSULTAS del menú viejo) — primero: la x Lote es la consulta central.
+        'Consultas' => [
+            ['label' => 'Órdenes de Proceso x Lote',   'desc' => 'Consulta central: sectores → lotes', 'icon' => 'bi-box-seam',  'url' => '/modules/odp_lote/'],
+            ['label' => 'Órdenes de Proceso x Etapa',  'desc' => 'Órdenes y resumen por etapa',   'icon' => 'bi-diagram-3', 'url' => '/modules/odp_etapa/'],
+            ['label' => 'Órdenes de Proceso x Sector', 'desc' => 'Procesos de un sector',         'icon' => 'bi-pin-map',   'url' => '/modules/odp_sector/'],
+        ],
+        // Procesos (transaccionales)
         'Procesos' => [
             ['label' => 'Recepción de Órdenes', 'desc' => 'Alta de órdenes de proceso',     'icon' => 'bi-box-arrow-in-down', 'url' => '/modules/recepcion/'],
             ['label' => 'Definición de Órdenes', 'desc' => 'Ruta de procesos de la orden', 'icon' => 'bi-diagram-3',        'url' => '/modules/definicion/'],
             ['label' => 'Programación',          'desc' => 'Liberar órdenes a producción', 'icon' => 'bi-calendar-week',   'url' => '/modules/programacion/'],
-            ['label' => 'Reimprimir Orden',      'desc' => 'Imprimir orden de proceso',    'icon' => 'bi-printer',         'url' => '/modules/imprimir_orden/'],
         ],
+        // Reimpresiones (EMISIONES del menú viejo) — uso intensivo
+        'Reimpresiones' => [
+            ['label' => 'Orden de Proceso',     'desc' => 'Reimprimir orden (Rpt Ordenes de Proceso)', 'icon' => 'bi-printer',  'url' => '/modules/imprimir_orden/'],
+            ['label' => 'PTP',                  'desc' => 'Reimprimir PTP / ruta de procesos',          'icon' => 'bi-printer',  'url' => '/modules/imprimir_ptp/'],
+        ],
+        // Comercial
         'Comercial' => [
             ['label' => 'Cotización de Órdenes', 'desc' => 'Presupuestos PTP', 'icon' => 'bi-cash-coin', 'url' => '/modules/cotizacion/'],
         ],
-        'Reportes' => [
+        // Listados (LISTADOS del menú viejo)
+        'Listados' => [
             ['label' => 'Pendientes de Definición',   'desc' => 'Cola de definición',     'icon' => 'bi-diagram-3',          'url' => '/modules/reportes/?r=pend_definicion'],
             ['label' => 'Pendientes de Programación', 'desc' => 'Cola de programación',   'icon' => 'bi-calendar-week',      'url' => '/modules/reportes/?r=pend_programacion'],
             ['label' => 'En Producción',              'desc' => 'Órdenes por sector',     'icon' => 'bi-gear-wide-connected','url' => '/modules/reportes/?r=en_produccion'],
@@ -50,11 +63,6 @@ return [
             ['label' => 'Resumen por Etapa',          'desc' => 'Totales por etapa',      'icon' => 'bi-bar-chart',          'url' => '/modules/reportes/?r=resumen_etapas'],
             ['label' => 'Últimas Recibidas',          'desc' => 'Órdenes recientes',      'icon' => 'bi-clock-history',      'url' => '/modules/reportes/?r=ultimas_recibidas'],
             ['label' => 'Órdenes Anuladas',           'desc' => 'Anuladas',               'icon' => 'bi-x-octagon',          'url' => '/modules/reportes/?r=anuladas'],
-        ],
-        'Consultas' => [
-            ['label' => 'Órdenes de Proceso x Lote',   'desc' => 'Lotes pendientes por sector',  'icon' => 'bi-box-seam',  'url' => '/modules/odp_lote/'],
-            ['label' => 'Órdenes de Proceso x Etapa',  'desc' => 'Órdenes y resumen por etapa',   'icon' => 'bi-diagram-3', 'url' => '/modules/odp_etapa/'],
-            ['label' => 'Órdenes de Proceso x Sector', 'desc' => 'Procesos de un sector',         'icon' => 'bi-pin-map',   'url' => '/modules/odp_sector/'],
         ],
         'Maestros' => [
             ['label' => 'Clientes',  'desc' => 'Ficha + ABM',           'icon' => 'bi-people',        'url' => '/modules/abm/?m=clientes'],
