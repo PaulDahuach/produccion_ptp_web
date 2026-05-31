@@ -42,6 +42,22 @@ const Rec = {
         this.el('f_CODADO').addEventListener('change', () => this.onAccion());
         this.el('f_CODCLI').addEventListener('change', () => this.onCliente());
         this.el('f_CODTEL').addEventListener('change', () => this.onTela());
+        this.el('f_REPODP').addEventListener('change', () => this.onReproceso());
+    },
+
+    /** REPROCESA: copia los datos de la orden original (REPODP_AfterUpdate del legacy). */
+    async onReproceso() {
+        const rep = this.el('f_REPODP').value.trim();
+        if (this.el('f_CODADO').value === '1' || !rep) return;
+        const j = await (await fetch('api.php?action=get&id=' + encodeURIComponent(rep))).json();
+        if (!j.ok || !j.data) { this.toast('Orden a reprocesar no encontrada: ' + rep, 'danger'); this.el('f_REPODP').value = ''; return; }
+        const d = j.data;
+        this.el('f_REMODP').value = (d.REMODP == null ? '' : d.REMODP);
+        this.el('f_CODCLI').value = (d.CODCLI == null ? '' : d.CODCLI);
+        await this.onCliente(d.CODMAR);  // carga marcas del cliente y setea la marca
+        ['CODTAL', 'OCNODP', 'CAXODP', 'CODPR1', 'CANODP', 'PESODP', 'PRTODP', 'PREODP', 'NUMPTP', 'CODPR2', 'CODTEL', 'CODCT1', 'CODCT2', 'O10ODP']
+            .forEach(c => { const el = this.el('f_' + c); if (el) el.value = (d[c] == null ? '' : d[c]); });
+        this.toast('Datos copiados de la orden N° ' + rep, 'info');
     },
 
     onAccion() {
