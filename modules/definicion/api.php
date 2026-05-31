@@ -139,7 +139,7 @@ function definir() {
         foreach ($procs as $pr) {
             $ord++;
             $cp  = sqlInt($pr['CODCDP'] ?? '');
-            $por = sqlDec($pr['PORODP'] ?? '');
+            $por = (trim((string) ($pr['PORODP'] ?? '')) === '') ? 'Null' : sqlDec($pr['PORODP']);
             $obs = sqlTxt($pr['OBSODP'] ?? '');
             $cols = ['NUMODP', 'ORDODP', 'CODPRC', 'CODCDP', 'PORODP', 'OBSODP'];
             $vals = [(string) $id, (string) $ord, (string) intval($pr['CODPRC']), $cp, $por, $obs];

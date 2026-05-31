@@ -37,6 +37,14 @@ return [
             ['label' => 'Recepción de Órdenes', 'desc' => 'Alta de órdenes de proceso',     'icon' => 'bi-box-arrow-in-down', 'url' => '/modules/recepcion/'],
             ['label' => 'Definición de Órdenes', 'desc' => 'Ruta de procesos de la orden', 'icon' => 'bi-diagram-3',        'url' => '/modules/definicion/'],
             ['label' => 'Programación',          'desc' => 'Liberar órdenes a producción', 'icon' => 'bi-calendar-week',   'url' => '/modules/programacion/'],
+            ['label' => 'Reimprimir Orden',      'desc' => 'Imprimir orden de proceso',    'icon' => 'bi-printer',         'url' => '/modules/imprimir_orden/'],
+        ],
+        'Reportes' => [
+            ['label' => 'Pendientes de Definición',   'desc' => 'Cola de definición',     'icon' => 'bi-diagram-3',          'url' => '/modules/reportes/?r=pend_definicion'],
+            ['label' => 'Pendientes de Programación', 'desc' => 'Cola de programación',   'icon' => 'bi-calendar-week',      'url' => '/modules/reportes/?r=pend_programacion'],
+            ['label' => 'En Producción',              'desc' => 'Órdenes por sector',     'icon' => 'bi-gear-wide-connected','url' => '/modules/reportes/?r=en_produccion'],
+            ['label' => 'En Administración',          'desc' => 'Pendientes de remito',   'icon' => 'bi-inboxes',            'url' => '/modules/reportes/?r=en_administracion'],
+            ['label' => 'Resumen por Etapa',          'desc' => 'Totales por etapa',      'icon' => 'bi-bar-chart',          'url' => '/modules/reportes/?r=resumen_etapas'],
         ],
         'Consultas' => [
             ['label' => 'Órdenes de Proceso x Lote',   'desc' => 'Lotes pendientes por sector',  'icon' => 'bi-box-seam',  'url' => '/modules/odp_lote/'],
