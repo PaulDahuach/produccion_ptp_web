@@ -29,6 +29,7 @@
         document.getElementById('f_items').innerHTML = items.length ? items.map(function (it) {
             return '<tr><td>' + it.ORDPPP + '</td><td>' + esc(it.DENPRC) + '</td><td class="text-end">' + (it.CANPPP || '') + '</td><td class="text-end">' + money(it.PREPPP) + '</td><td class="text-end">' + money(it.NETPPP) + '</td><td class="text-end">' + money(it.TOTPPP) + '</td></tr>';
         }).join('') : '<tr><td colspan="6" class="text-muted text-center">Sin procesos</td></tr>';
+        document.getElementById('btnImprimir').href = 'print.php?id=' + encodeURIComponent(c.NUMPPP);
         if (!modal) modal = new bootstrap.Modal(document.getElementById('modalFicha'));
         modal.show();
     }

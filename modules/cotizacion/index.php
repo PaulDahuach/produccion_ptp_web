@@ -43,7 +43,10 @@ module_head('Cotización de Órdenes', 'bi-cash-coin',
           <tbody id="f_items"><tr><td colspan="6" class="text-muted text-center">—</td></tr></tbody>
         </table>
       </div>
-      <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button></div>
+      <div class="modal-footer">
+        <a id="btnImprimir" class="btn btn-primary" target="_blank" href="#"><i class="bi bi-printer me-1"></i>Imprimir</a>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+      </div>
     </div>
   </div>
 </div>
