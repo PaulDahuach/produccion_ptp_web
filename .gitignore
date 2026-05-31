@@ -1,0 +1,6 @@
+# Instancia Producción PTP (clon del inforemp-web-kit)
+log/
+*.log
+Thumbs.db
+.DS_Store
+# config/system.php se versiona: es la config de esta instalación (dev).
