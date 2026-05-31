@@ -25,6 +25,10 @@ $ro      = db_readonly();
     <div class="d-flex align-items-center gap-3">
         <h1><i class="bi bi-grid-3x3-gap me-2"></i><?= h($name) ?></h1>
         <?php if ($ro): ?><span class="badge bg-warning text-dark"><i class="bi bi-eye me-1"></i>Sólo lectura</span><?php endif; ?>
+        <?php if (auth_sector_login() && auth_sector()): ?>
+        <span class="badge bg-primary"><i class="bi bi-diagram-3 me-1"></i><?= h(auth_sector_name()) ?></span>
+        <a href="<?= bu('/app/sector.php') ?>" class="btn btn-sm btn-outline-light py-0 px-1" title="Cambiar sector"><i class="bi bi-arrow-repeat"></i></a>
+        <?php endif; ?>
     </div>
     <div class="d-flex align-items-center gap-3">
         <span class="text-light"><i class="bi bi-person-circle me-1"></i><?= h(auth_user()) ?></span>

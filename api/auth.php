@@ -20,10 +20,23 @@ try {
         case 'login':
             // Paso 2: validar credenciales completas.
             if (auth_login($_POST['id'] ?? 0, $_POST['name'] ?? '', $_POST['pass'] ?? '')) {
-                ok(['redirect' => bu('/app/index.php')]);
+                $dest = auth_sector_login() ? bu('/app/sector.php') : bu('/app/index.php');
+                ok(['redirect' => $dest]);
             } else {
                 fail('Credenciales inválidas', 401);
             }
+            break;
+
+        case 'sectores':
+            // Sectores del usuario logueado (paso intermedio del login sectorizado).
+            if (!auth_logged_in()) { fail('No autenticado', 401); break; }
+            ok(auth_sectors());
+            break;
+
+        case 'set_sector':
+            if (!auth_logged_in()) { fail('No autenticado', 401); break; }
+            auth_set_sector(intval($_POST['cod'] ?? 0), $_POST['name'] ?? '');
+            ok(['redirect' => bu('/app/index.php')]);
             break;
 
         case 'logout':

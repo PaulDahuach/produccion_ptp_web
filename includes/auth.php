@@ -16,10 +16,32 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-/** Redirige a login si no hay sesión. Llamar al tope de páginas protegidas. */
-function auth_require_login($login_url = null) {
-    if (empty($_SESSION['uid'])) {
+/** True si este sistema usa login sectorizado (opt-in via config 'sector_login'). */
+function auth_sector_login() {
+    return !empty(sys('sector_login'));
+}
+
+/** True si hay sesión iniciada. Robusto ante uid=0 (operarios pueden tener CODOPR=0). */
+function auth_logged_in() {
+    return isset($_SESSION['uid']) && $_SESSION['uid'] !== '' && $_SESSION['uid'] !== null;
+}
+
+/** Exige sesión iniciada (sólo usuario). Para páginas que aún no requieren sector. */
+function auth_require_user($login_url = null) {
+    if (!auth_logged_in()) {
         header('Location: ' . ($login_url ?: bu('/app/login.php')));
+        exit;
+    }
+}
+
+/**
+ * Redirige a login si no hay sesión. Llamar al tope de páginas protegidas.
+ * Si el sistema usa sector_login y todavía no se eligió sector, manda a elegirlo.
+ */
+function auth_require_login($login_url = null) {
+    auth_require_user($login_url);
+    if (auth_sector_login() && empty($_SESSION['sector'])) {
+        header('Location: ' . bu('/app/sector.php'));
         exit;
     }
 }
@@ -28,6 +50,27 @@ function auth_require_login($login_url = null) {
 function auth_user() {
     return $_SESSION['uname'] ?? 'Usuario';
 }
+
+/** Sectores que puede operar el usuario actual (config 'sector_login'). */
+function auth_sectors() {
+    $sl = sys('sector_login');
+    if (!$sl) return [];
+    $uid = intval($_SESSION['uid'] ?? 0);
+    $sql = "SELECT DISTINCT S.[{$sl['sec_pk']}] AS id, S.[{$sl['sec_den']}] AS den
+            FROM [{$sl['rel_tabla']}] AS R INNER JOIN [{$sl['sec_tabla']}] AS S
+              ON R.[{$sl['rel_sector']}] = S.[{$sl['sec_pk']}]
+            WHERE R.[{$sl['rel_fk']}] = $uid ORDER BY S.[{$sl['sec_den']}];";
+    return db_query($sql);
+}
+
+/** Fija el sector activo en la sesión. */
+function auth_set_sector($cod, $name) {
+    $_SESSION['sector'] = $cod;
+    $_SESSION['sector_name'] = $name;
+}
+
+function auth_sector()      { return $_SESSION['sector'] ?? null; }
+function auth_sector_name() { return $_SESSION['sector_name'] ?? ''; }
 
 /** Busca un usuario por su contraseña (paso 1 del login, como RDN). */
 function auth_lookup_by_pass($pass) {

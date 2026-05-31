@@ -37,6 +37,10 @@ function module_head($title, $icon = 'bi-app', $buttons_html = '') {
         <a href="<?= bu('/app/index.php') ?>" class="btn btn-outline-light btn-sm me-2" title="Menú"><i class="bi bi-house-door"></i></a>
         <h1><i class="bi <?= h($icon) ?> me-2"></i><?= h($title) ?></h1>
         <?php if ($ro): ?><span class="badge bg-warning text-dark"><i class="bi bi-eye me-1"></i>Sólo lectura</span><?php endif; ?>
+        <?php if (function_exists('auth_sector_login') && auth_sector_login() && auth_sector()): ?>
+        <span class="badge bg-primary"><i class="bi bi-diagram-3 me-1"></i><?= h(auth_sector_name()) ?></span>
+        <a href="<?= bu('/app/sector.php') ?>" class="btn btn-sm btn-outline-light py-0 px-1" title="Cambiar sector"><i class="bi bi-arrow-repeat"></i></a>
+        <?php endif; ?>
     </div>
     <div class="d-flex align-items-center gap-2">
         <?= $buttons_html ?>
