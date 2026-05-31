@@ -1,0 +1,186 @@
+<?php
+/**
+ * Órdenes de Muestra — Alta / Modificación (transaccional). Portado de `Frm Ordenes De
+ * Muestra` (SetData A/M/B). Crea la muestra y AUTO-CREA su PTP (la ruta de procesos),
+ * escribiendo los procesos en AMBAS tablas (Ordenes De Muestra Procesos + PTP Procesos),
+ * tal como el legacy (así "Cargar PTP" en Definición funciona). De esta muestra deriva
+ * luego el Presupuesto PTP.
+ *   Alta "A": NUMODM=next_number('ULTODM'); NUMPTP=next_number('ULTPTP') + inserta Tbl PTP;
+ *             inserta cabecera ODM + procesos (ODM + PTP) + prendas.
+ *   Modif "M": reescribe cabecera, actualiza el PTP, reemplaza procesos (ambas) y prendas.
+ *   Baja "B": CODEDM=3 (ANULADA).
+ * Catálogos: Origen=Tbl Origenes De Muestra, Acción=Tbl Acciones De PTP, Estado=Tbl Estados
+ * De Muestra, Propiedad prototipo=Tbl Propiedades De Prototipo. Prototipos (PREODM) se omiten.
+ */
+require_once __DIR__ . '/../../includes/db.php';
+require_once __DIR__ . '/../../includes/helpers.php';
+require_once __DIR__ . '/../../includes/auth.php';
+auth_require_login();
+
+$action = $_GET['action'] ?? $_POST['action'] ?? '';
+try {
+    switch ($action) {
+        case 'init':           initData(); break;
+        case 'marcas_cliente': marcasCliente(); break;
+        case 'list':           listar(); break;
+        case 'get':            obtener(); break;
+        case 'guardar':        guardar(); break;
+        case 'anular':         anular(); break;
+        default: fail('Acción inválida: ' . $action);
+    }
+} catch (Exception $e) {
+    fail($e->getMessage(), 500);
+}
+
+function lk($t, $pk, $den, $where = '') { return db_query("SELECT $pk AS id, $den AS den FROM [$t] $where ORDER BY $den;"); }
+function sqlInt($v) { $v = trim((string) $v); return $v === '' ? 'Null' : (string) intval($v); }
+function sqlDec($v) { $v = trim((string) $v); return $v === '' ? 'Null' : (string) (float) str_replace(',', '.', $v); }
+function sqlTxt($v) { $v = trim((string) $v); return $v === '' ? 'Null' : "'" . db_esc($v) . "'"; }
+
+function initData() {
+    ok([
+        'readonly'    => db_readonly(),
+        'clientes'    => lk('Tbl Clientes', 'CODCLI', 'DENCLI'),
+        'procesos'    => lk('Tbl Procesos', 'CODPRC', 'DENPRC'),
+        'colores'     => lk('Tbl Colores De Proceso', 'CODCDP', 'DENCDP'),
+        'prendas'     => lk('Tbl Prendas', 'CODPRE', 'DENPRE'),
+        'telas'       => lk('Tbl Telas', 'CODTEL', 'DENTEL'),
+        'estados'     => lk('Tbl Estados De Muestra', 'CODEDM', 'DENEDM'),
+        'origenes'    => lk('Tbl Origenes De Muestra', 'CODODM', 'DENODM'),
+        'acciones'    => lk('Tbl Acciones De PTP', 'CODADP', 'DENADP'),
+        'propiedades' => lk('Tbl Propiedades De Prototipo', 'CODPDP', 'DENPDP'),
+        'fechaDisp'   => date('d/m/Y'),
+    ]);
+}
+
+function marcasCliente() {
+    $cli = intval($_GET['cli'] ?? 0);
+    ok(db_query("SELECT M.CODMAR AS id, M.DENMAR AS den
+                 FROM [Tbl Clientes Marcas] AS CM INNER JOIN [Tbl Marcas] AS M ON CM.CODMAR = M.CODMAR
+                 WHERE CM.CODCLI = $cli ORDER BY M.DENMAR;"));
+}
+
+function listar() {
+    $w = ['(O.CODEDM NOT IN (3,5))'];
+    $q = trim($_GET['q'] ?? '');
+    if ($q !== '') {
+        $e = db_esc($q);
+        $w[] = "((O.NUMODM LIKE '%$e%') OR (C.DENCLI LIKE '%$e%') OR (M.DENMAR LIKE '%$e%') OR (O.NUMPTP LIKE '%$e%'))";
+    }
+    $where = 'WHERE ' . implode(' AND ', $w);
+    $rows = db_query("SELECT TOP 500 O.NUMODM AS ODM, O.FDEODM, C.DENCLI AS CLIENTE, M.DENMAR AS MARCA, O.CANODM AS CANT, O.NUMPTP AS PTP
+                      FROM (([Tbl Ordenes De Muestra] AS O
+                        LEFT JOIN [Tbl Clientes] AS C ON O.CODCLI = C.CODCLI)
+                        LEFT JOIN [Tbl Marcas] AS M ON O.CODMAR = M.CODMAR)
+                      $where ORDER BY O.NUMODM DESC;");
+    foreach ($rows as &$r) $r['FDEODM'] = to_disp_date($r['FDEODM']);
+    ok($rows);
+}
+
+function obtener() {
+    $id = intval($_GET['id'] ?? 0);
+    $h = db_row("SELECT O.*, P.DENPTP FROM [Tbl Ordenes De Muestra] AS O
+                 LEFT JOIN [Tbl PTP] AS P ON O.NUMPTP = P.NUMPTP WHERE O.NUMODM = $id;");
+    if (!$h) { fail('Orden de Muestra no encontrada'); return; }
+    $h['FDEODM'] = to_disp_date($h['FDEODM']);
+    $procs = db_query("SELECT PP.ORDODM, PP.CODPRC, Prc.DENPRC, PP.CODCDP, CP.DENCDP, PP.PORODM, PP.OBSODM
+                       FROM (([Tbl Ordenes De Muestra Procesos] AS PP
+                         LEFT JOIN [Tbl Procesos] AS Prc ON PP.CODPRC = Prc.CODPRC)
+                         LEFT JOIN [Tbl Colores De Proceso] AS CP ON PP.CODCDP = CP.CODCDP)
+                       WHERE PP.NUMODM = $id ORDER BY PP.ORDODM;");
+    $prendas = db_query("SELECT PR.ORDODM, PR.CODPRE, Pre.DENPRE, PR.CODTEL, Tl.DENTEL
+                         FROM (([Tbl Ordenes De Muestra Prendas] AS PR
+                           LEFT JOIN [Tbl Prendas] AS Pre ON PR.CODPRE = Pre.CODPRE)
+                           LEFT JOIN [Tbl Telas] AS Tl ON PR.CODTEL = Tl.CODTEL)
+                         WHERE PR.NUMODM = $id ORDER BY PR.ORDODM;");
+    ok(['cabecera' => $h, 'procesos' => $procs, 'prendas' => $prendas]);
+}
+
+function guardar() {
+    if (db_readonly()) { fail('Sistema en modo solo lectura'); return; }
+    $id   = intval($_POST['NUMODM'] ?? 0);   // 0 = alta
+    $cli  = intval($_POST['CODCLI'] ?? 0);
+    $mar  = intval($_POST['CODMAR'] ?? 0);
+    $fec  = trim($_POST['FDEODM'] ?? '');
+    $est  = intval($_POST['CODEDM'] ?? 1);
+    $can  = trim($_POST['CANODM'] ?? '');
+    $ori  = intval($_POST['CODODM'] ?? 1);   // origen
+    $acc  = intval($_POST['CODADP'] ?? 1);   // acción
+    $prop = intval($_POST['CODPDP'] ?? 0);   // propiedad prototipo (opcional)
+    $den  = trim($_POST['DENPTP'] ?? '');
+    $obs  = trim($_POST['OBSODM'] ?? '');
+    $procs = json_decode($_POST['__procesos'] ?? '[]', true); if (!is_array($procs)) $procs = [];
+    $procs = array_values(array_filter($procs, function ($p) { return intval($p['CODPRC'] ?? 0) > 0; }));
+    $prendas = json_decode($_POST['__prendas'] ?? '[]', true); if (!is_array($prendas)) $prendas = [];
+    $prendas = array_values(array_filter($prendas, function ($p) { return intval($p['CODPRE'] ?? 0) > 0; }));
+
+    if ($cli <= 0) { fail('Elegí un cliente'); return; }
+    if ($mar <= 0) { fail('Elegí una marca'); return; }
+    if (!$procs)   { fail('Cargá al menos un proceso'); return; }
+    $fecSql = '#' . db_esc(fecha_access($fec !== '' ? $fec : date('d/m/Y'))) . '#';
+    $uid = intval($_SESSION['uid'] ?? 0);
+
+    db_begin();
+    try {
+        if ($id <= 0) {
+            // ALTA: nueva ODM + nuevo PTP
+            $id = next_number('ULTODM');
+            $ptp = next_number('ULTPTP');
+            db_exec("INSERT INTO [Tbl PTP] ([NUMPTP],[FDEPTP],[CODEDP],[DENPTP],[CNFPTP],[DISPTP],[CODCLI],[CODMAR])
+                     VALUES ($ptp, $fecSql, 1, " . sqlTxt($den !== '' ? $den : ('PTP' . $ptp)) . ", True, False, $cli, $mar);");
+            db_exec("INSERT INTO [Tbl Ordenes De Muestra]
+                       ([NUMODM],[FDEODM],[CODEDM],[CODCLI],[CODMAR],[CANODM],[CODODM],[CODADP],[CODPDP],[NUMPTP],[OBSODM],[NUIODM],[NMIODM],[NOWODM])
+                     VALUES ($id, $fecSql, $est, $cli, $mar, " . sqlDec($can) . ", $ori, $acc, " . ($prop > 0 ? $prop : 'Null') . ",
+                       $ptp, " . sqlTxt($obs) . ", $uid, 0, Now());");
+        } else {
+            // MODIF: mantiene NUMODM y su NUMPTP
+            $ptpRow = db_row("SELECT NUMPTP FROM [Tbl Ordenes De Muestra] WHERE NUMODM=$id;");
+            $ptp = (int) ($ptpRow['NUMPTP'] ?? 0);
+            db_exec("UPDATE [Tbl Ordenes De Muestra] SET FDEODM=$fecSql, CODEDM=$est, CODCLI=$cli, CODMAR=$mar,
+                       CANODM=" . sqlDec($can) . ", CODODM=$ori, CODADP=$acc, CODPDP=" . ($prop > 0 ? $prop : 'Null') . ",
+                       OBSODM=" . sqlTxt($obs) . " WHERE NUMODM=$id;");
+            if ($ptp > 0) {
+                db_exec("UPDATE [Tbl PTP] SET FDEPTP=$fecSql, DENPTP=" . sqlTxt($den) . ", CODCLI=$cli, CODMAR=$mar WHERE NUMPTP=$ptp;");
+                db_exec("DELETE FROM [Tbl PTP Procesos] WHERE NUMPTP=$ptp;");
+            }
+            db_exec("DELETE FROM [Tbl Ordenes De Muestra Procesos] WHERE NUMODM=$id;");
+            db_exec("DELETE FROM [Tbl Ordenes De Muestra Prendas] WHERE NUMODM=$id;");
+        }
+
+        // Procesos → ODM Procesos + PTP Procesos (idénticos, como el legacy)
+        $ord = 0;
+        foreach ($procs as $p) {
+            $ord++;
+            $cp  = sqlInt($p['CODCDP'] ?? '');
+            $por = sqlDec($p['PORODM'] ?? '');
+            $ob  = sqlTxt($p['OBSODM'] ?? '');
+            $cpr = (string) intval($p['CODPRC']);
+            db_exec("INSERT INTO [Tbl Ordenes De Muestra Procesos] ([NUMODM],[ORDODM],[CODPRC],[CODCDP],[PORODM],[OBSODM])
+                     VALUES ($id, $ord, $cpr, $cp, $por, $ob);");
+            if (!empty($ptp))
+                db_exec("INSERT INTO [Tbl PTP Procesos] ([NUMPTP],[ORDPTP],[CODPRC],[CODCDP],[PORPTP],[OBSPTP])
+                         VALUES ($ptp, $ord, $cpr, $cp, $por, $ob);");
+        }
+        // Prendas → ODM Prendas
+        $ord = 0;
+        foreach ($prendas as $pr) {
+            $ord++;
+            db_exec("INSERT INTO [Tbl Ordenes De Muestra Prendas] ([NUMODM],[ORDODM],[CODPRE],[CODTEL])
+                     VALUES ($id, $ord, " . (string) intval($pr['CODPRE']) . ", " . sqlInt($pr['CODTEL'] ?? '') . ");");
+        }
+        db_commit();
+    } catch (Exception $e) {
+        db_rollback();
+        fail('No se pudo guardar: ' . $e->getMessage());
+        return;
+    }
+    ok(['numodm' => $id, 'numptp' => $ptp ?? null, 'procesos' => count($procs), 'prendas' => count($prendas)]);
+}
+
+function anular() {
+    if (db_readonly()) { fail('Sistema en modo solo lectura'); return; }
+    $id = intval($_POST['__id'] ?? 0);
+    if ($id <= 0) { fail('Falta la orden de muestra'); return; }
+    db_exec("UPDATE [Tbl Ordenes De Muestra] SET CODEDM=3 WHERE NUMODM=$id;");
+    ok(['numodm' => $id]);
+}

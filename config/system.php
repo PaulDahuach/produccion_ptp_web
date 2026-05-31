@@ -58,6 +58,7 @@ return [
             ['label' => 'Cotización de Órdenes', 'desc' => 'Presupuestos PTP', 'icon' => 'bi-cash-coin', 'url' => '/modules/cotizacion/'],
             ['label' => 'Consulta de PTP',       'desc' => 'Rutas de procesos / pedidos', 'icon' => 'bi-list-check', 'url' => '/modules/ptp/'],
             ['label' => 'Órdenes de Muestra',    'desc' => 'Muestras / prototipos',       'icon' => 'bi-eyedropper', 'url' => '/modules/odm/'],
+            ['label' => 'Muestra (Alta/Modif.)', 'desc' => 'Crear/editar muestra + PTP',  'icon' => 'bi-eyedropper', 'url' => '/modules/odm_edit/'],
         ],
         // Listados (LISTADOS del menú viejo)
         'Listados' => [
