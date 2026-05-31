@@ -56,6 +56,18 @@
             });
         }
         document.getElementById('resumen').textContent = rows.length + ' lote(s) en proceso';
+        sincPrint();
+    }
+
+    function sincPrint() {
+        var p = new URLSearchParams({
+            q: document.getElementById('fq').value.trim(),
+            etapa: document.getElementById('fEtapa').value,
+            desde: document.getElementById('fDesde').value.trim(),
+            hasta: document.getElementById('fHasta').value.trim()
+        });
+        var b = document.getElementById('btnImprimir');
+        if (b) b.href = 'print.php?' + p.toString();
     }
 
     document.getElementById('btnFiltrar').addEventListener('click', load);
