@@ -43,6 +43,25 @@ return [
                   $JOIN WHERE O.CODETA=120 ORDER BY O.NUMODP DESC;",
         'fechas' => ['Definido'],
     ],
+    'ultimas_recibidas' => [
+        'titulo' => 'Últimas Órdenes Recibidas', 'icono' => 'bi-clock-history',
+        'sql' => "SELECT TOP 200 O.NUMODP AS [ODP], O.FDRODP AS [Recibido], C.DENCLI AS [Cliente],
+                    M.DENMAR AS [Marca], Pre.DENPRE AS [Prenda], O.CANODP AS [Cantidad], E.DENETA AS [Etapa]
+                  FROM (((([Tbl Ordenes De Proceso] AS O
+                    LEFT JOIN [Tbl Clientes] AS C ON O.CODCLI=C.CODCLI)
+                    LEFT JOIN [Tbl Marcas] AS M ON O.CODMAR=M.CODMAR)
+                    LEFT JOIN [Tbl Prendas] AS Pre ON O.CODPR1=Pre.CODPRE)
+                    LEFT JOIN [Tbl Etapas] AS E ON O.CODETA=E.CODETA)
+                  ORDER BY O.NUMODP DESC;",
+        'fechas' => ['Recibido'],
+    ],
+    'anuladas' => [
+        'titulo' => 'Órdenes Anuladas', 'icono' => 'bi-x-octagon',
+        'sql' => "SELECT O.NUMODP AS [ODP], O.FDRODP AS [Recibido], C.DENCLI AS [Cliente],
+                    M.DENMAR AS [Marca], O.CANODP AS [Cantidad], O.OBSODP AS [Motivo]
+                  $JOIN WHERE O.CODETA=0 ORDER BY O.NUMODP DESC;",
+        'fechas' => ['Recibido'],
+    ],
     'resumen_etapas' => [
         'titulo' => 'Resumen por Etapa', 'icono' => 'bi-bar-chart',
         'sql' => "SELECT E.DENETA AS [Etapa], O.CODETA AS [Cód], Count(O.NUMODP) AS [Órdenes], Sum(O.CANODP) AS [Prendas]

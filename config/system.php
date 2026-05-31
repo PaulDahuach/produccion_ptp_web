@@ -39,12 +39,17 @@ return [
             ['label' => 'Programación',          'desc' => 'Liberar órdenes a producción', 'icon' => 'bi-calendar-week',   'url' => '/modules/programacion/'],
             ['label' => 'Reimprimir Orden',      'desc' => 'Imprimir orden de proceso',    'icon' => 'bi-printer',         'url' => '/modules/imprimir_orden/'],
         ],
+        'Comercial' => [
+            ['label' => 'Cotización de Órdenes', 'desc' => 'Presupuestos PTP', 'icon' => 'bi-cash-coin', 'url' => '/modules/cotizacion/'],
+        ],
         'Reportes' => [
             ['label' => 'Pendientes de Definición',   'desc' => 'Cola de definición',     'icon' => 'bi-diagram-3',          'url' => '/modules/reportes/?r=pend_definicion'],
             ['label' => 'Pendientes de Programación', 'desc' => 'Cola de programación',   'icon' => 'bi-calendar-week',      'url' => '/modules/reportes/?r=pend_programacion'],
             ['label' => 'En Producción',              'desc' => 'Órdenes por sector',     'icon' => 'bi-gear-wide-connected','url' => '/modules/reportes/?r=en_produccion'],
             ['label' => 'En Administración',          'desc' => 'Pendientes de remito',   'icon' => 'bi-inboxes',            'url' => '/modules/reportes/?r=en_administracion'],
             ['label' => 'Resumen por Etapa',          'desc' => 'Totales por etapa',      'icon' => 'bi-bar-chart',          'url' => '/modules/reportes/?r=resumen_etapas'],
+            ['label' => 'Últimas Recibidas',          'desc' => 'Órdenes recientes',      'icon' => 'bi-clock-history',      'url' => '/modules/reportes/?r=ultimas_recibidas'],
+            ['label' => 'Órdenes Anuladas',           'desc' => 'Anuladas',               'icon' => 'bi-x-octagon',          'url' => '/modules/reportes/?r=anuladas'],
         ],
         'Consultas' => [
             ['label' => 'Órdenes de Proceso x Lote',   'desc' => 'Lotes pendientes por sector',  'icon' => 'bi-box-seam',  'url' => '/modules/odp_lote/'],
