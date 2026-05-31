@@ -49,7 +49,8 @@
         document.getElementById('detResumen').textContent = '';
         if (table) table.clear().draw();
         syncSalidas();
-        document.getElementById('sectoresMsg').textContent = 'Cargando…';
+        var msg = document.getElementById('sectoresMsg');
+        if (msg) msg.textContent = 'Cargando…';
         var j = await (await fetch('api.php?action=resumen&' + qs(baseParams()))).json();
         var cont = document.getElementById('panelSectores');
         if (!j.ok) { cont.innerHTML = '<div class="text-danger small p-3">Error: ' + esc(j.error) + '</div>'; return; }
