@@ -122,7 +122,7 @@ const Rec = {
         const j = await (await fetch('api.php?action=crear', { method: 'POST', body: fd })).json();
         if (!j.ok) { this.el('formErr').textContent = j.error || 'Error'; this.toast(j.error || 'Error', 'danger'); return; }
         this.toast('Orden N° ' + j.data.numodp + ' registrada', 'success');
-        this.clear(); this.setMode('idle');
+        await this.ver(j.data.numodp);   // la deja en vista, lista para imprimir (como el legacy)
     },
 
     setMode(mode) {
@@ -135,6 +135,13 @@ const Rec = {
             this.el('btnAnular').disabled = (mode !== 'view');
         }
         this.el('mainForm').classList.toggle('mode-view', !creating);
+        // "Imprimir" disponible sólo cuando hay una orden cargada en vista
+        const imp = this.el('btnImprimir');
+        if (imp) {
+            const on = (mode === 'view' && this.currentId);
+            imp.classList.toggle('disabled', !on);
+            imp.href = on ? ('../imprimir_orden/?id=' + encodeURIComponent(this.currentId)) : '#';
+        }
         if (creating) this.onAccion();
     },
 
