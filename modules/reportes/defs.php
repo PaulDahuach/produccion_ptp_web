@@ -62,6 +62,18 @@ return [
                   $JOIN WHERE O.CODETA=0 ORDER BY O.NUMODP DESC;",
         'fechas' => ['Recibido'],
     ],
+    'por_ptp' => [
+        'titulo' => 'Órdenes por PTP', 'icono' => 'bi-list-check',
+        'sql' => "SELECT O.NUMPTP AS [PTP], O.NUMODP AS [ODP], O.FDRODP AS [Recibido], C.DENCLI AS [Cliente],
+                    M.DENMAR AS [Marca], Pre.DENPRE AS [Prenda], O.CANODP AS [Cantidad], E.DENETA AS [Etapa]
+                  FROM (((([Tbl Ordenes De Proceso] AS O
+                    LEFT JOIN [Tbl Clientes] AS C ON O.CODCLI=C.CODCLI)
+                    LEFT JOIN [Tbl Marcas] AS M ON O.CODMAR=M.CODMAR)
+                    LEFT JOIN [Tbl Prendas] AS Pre ON O.CODPR1=Pre.CODPRE)
+                    LEFT JOIN [Tbl Etapas] AS E ON O.CODETA=E.CODETA)
+                  WHERE O.CODETA>0 AND O.NUMPTP>0 ORDER BY O.NUMPTP DESC, O.NUMODP;",
+        'fechas' => ['Recibido'],
+    ],
     'resumen_etapas' => [
         'titulo' => 'Resumen por Etapa', 'icono' => 'bi-bar-chart',
         'sql' => "SELECT E.DENETA AS [Etapa], O.CODETA AS [Cód], Count(O.NUMODP) AS [Órdenes], Sum(O.CANODP) AS [Prendas]
