@@ -13,6 +13,7 @@ Navegador ──HTTPS──> Apache+PHP (Windows) ──COM/ADODB──> "Produc
 
 - **[docs/MANUAL.md](docs/MANUAL.md)** — Manual de uso (todas las pantallas y los circuitos).
 - **[docs/DEPLOY.md](docs/DEPLOY.md)** — Instalación y puesta en producción en la PC del cliente.
+- **[docs/NOTAS.md](docs/NOTAS.md)** — Notas técnicas y estado del proyecto (para retomar el desarrollo).
 
 ## Estado — pantallas implementadas
 
