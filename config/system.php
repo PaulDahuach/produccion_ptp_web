@@ -52,6 +52,7 @@ return [
         'Reimpresiones' => [
             ['label' => 'Orden de Proceso',     'desc' => 'Reimprimir orden (Rpt Ordenes de Proceso)', 'icon' => 'bi-printer',  'url' => '/modules/imprimir_orden/'],
             ['label' => 'PTP',                  'desc' => 'Reimprimir PTP / ruta de procesos',          'icon' => 'bi-printer',  'url' => '/modules/imprimir_ptp/'],
+            ['label' => 'Orden de Muestra',     'desc' => 'Reimprimir orden de muestra',                'icon' => 'bi-printer',  'url' => '/modules/imprimir_odm/'],
         ],
         // Comercial
         'Comercial' => [

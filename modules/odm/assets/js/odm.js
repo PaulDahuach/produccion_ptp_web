@@ -27,6 +27,7 @@
         document.getElementById('fTit').textContent = 'Orden de Muestra N° ' + c.NUMODM;
         set('f_num', c.NUMODM); set('f_fec', c.FDEODM); set('f_est', c.DENEDM); set('f_can', c.CANODM);
         set('f_cli', c.DENCLI); set('f_mar', c.DENMAR); set('f_ptp', c.NUMPTP); set('f_pre', c.DENPRE); set('f_tel', c.DENTEL);
+        document.getElementById('btnImprimir').href = '../imprimir_odm/?id=' + encodeURIComponent(c.NUMODM);
         var ps = j.data.procesos || [];
         document.getElementById('f_procs').innerHTML = ps.length ? ps.map(function (p) {
             return '<tr><td>' + esc(p.ORDODM) + '</td><td>' + esc(p.DENPRC) + '</td><td>' + esc(p.DENETA) + '</td><td>' + esc(p.DENCDP) + '</td><td class="text-end">' + esc(p.PORODM) + '</td><td>' + esc(p.OBSODM) + '</td></tr>';

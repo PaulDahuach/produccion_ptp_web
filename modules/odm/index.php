@@ -73,7 +73,10 @@ module_head('Consulta de Órdenes de Muestra', 'bi-eyedropper',
           <tbody id="f_prendas"><tr><td colspan="3" class="text-muted text-center">—</td></tr></tbody>
         </table>
       </div>
-      <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button></div>
+      <div class="modal-footer">
+        <a id="btnImprimir" class="btn btn-primary" target="_blank" href="#"><i class="bi bi-printer me-1"></i>Imprimir</a>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+      </div>
     </div>
   </div>
 </div>
@@ -83,5 +86,5 @@ module_foot('
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
-<script src="assets/js/odm.js"></script>
+<script src="assets/js/odm.js?v=2"></script>
 ');
