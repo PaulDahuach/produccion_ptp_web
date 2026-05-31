@@ -46,6 +46,7 @@ return [
             ['label' => 'Recepción de Órdenes', 'desc' => 'Alta de órdenes de proceso',     'icon' => 'bi-box-arrow-in-down', 'url' => '/modules/recepcion/'],
             ['label' => 'Definición de Órdenes', 'desc' => 'Ruta de procesos de la orden', 'icon' => 'bi-diagram-3',        'url' => '/modules/definicion/'],
             ['label' => 'Programación',          'desc' => 'Liberar órdenes a producción', 'icon' => 'bi-calendar-week',   'url' => '/modules/programacion/'],
+            ['label' => 'PTP (Alta/Modif.)',     'desc' => 'Crear/editar rutas de procesos','icon' => 'bi-list-check',     'url' => '/modules/ptp_edit/'],
         ],
         // Reimpresiones (EMISIONES del menú viejo) — uso intensivo
         'Reimpresiones' => [
