@@ -60,6 +60,7 @@ return [
             ['label' => 'Consulta de PTP',       'desc' => 'Rutas de procesos / pedidos', 'icon' => 'bi-list-check', 'url' => '/modules/ptp/'],
             ['label' => 'Órdenes de Muestra',    'desc' => 'Muestras / prototipos',       'icon' => 'bi-eyedropper', 'url' => '/modules/odm/'],
             ['label' => 'Muestra (Alta/Modif.)', 'desc' => 'Crear/editar muestra + PTP',  'icon' => 'bi-eyedropper', 'url' => '/modules/odm_edit/'],
+            ['label' => 'Muestras: Conf./Entrega','desc' => 'Confirmar y remitir muestras', 'icon' => 'bi-truck',     'url' => '/modules/odm_ciclo/'],
         ],
         // Listados (LISTADOS del menú viejo)
         'Listados' => [
