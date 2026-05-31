@@ -38,6 +38,8 @@ return [
             ['label' => 'Órdenes de Proceso x Lote',   'desc' => 'Consulta central: sectores → lotes', 'icon' => 'bi-box-seam',  'url' => '/modules/odp_lote/'],
             ['label' => 'Órdenes de Proceso x Etapa',  'desc' => 'Órdenes y resumen por etapa',   'icon' => 'bi-diagram-3', 'url' => '/modules/odp_etapa/'],
             ['label' => 'Órdenes de Proceso x Sector', 'desc' => 'Procesos de un sector',         'icon' => 'bi-pin-map',   'url' => '/modules/odp_sector/'],
+            ['label' => 'Órdenes Retrasadas',          'desc' => 'Definidas hace + de X días',    'icon' => 'bi-alarm',     'url' => '/modules/odp_retrasadas/'],
+            ['label' => 'Movimientos de Lotes',        'desc' => 'Ingresos/egresos por sector',   'icon' => 'bi-arrow-left-right', 'url' => '/modules/odp_movimientos/'],
         ],
         // Procesos (transaccionales)
         'Procesos' => [

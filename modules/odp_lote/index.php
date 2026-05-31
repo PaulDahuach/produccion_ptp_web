@@ -12,6 +12,7 @@ auth_require_login();
 module_head('Órdenes de Proceso x Lote', 'bi-box-seam',
     '<a class="btn btn-outline-light btn-sm me-2 disabled" id="btnImprimir" target="_blank" href="#"><i class="bi bi-printer me-1"></i>Imprimir</a>' .
     '<a class="btn btn-outline-light btn-sm me-2 disabled" id="btnExcel" href="#"><i class="bi bi-file-earmark-spreadsheet me-1"></i>Excel</a>' .
+    '<a class="btn btn-outline-warning btn-sm me-2" href="../odp_retrasadas/"><i class="bi bi-alarm me-1"></i>Retrasadas</a>' .
     '<button class="btn btn-outline-light btn-sm" id="btnReload"><i class="bi bi-arrow-clockwise me-1"></i>Refrescar</button>');
 ?>
 <link href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css" rel="stylesheet">
