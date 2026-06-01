@@ -33,6 +33,11 @@ return [
     'theme'       => 'dark',
 
     'menu' => [
+        // Acceso al portal (selector de sistemas). URL absoluta → bu() la respeta.
+        // En producción cambiar localhost por el host/raíz de la LAN.
+        'Acceso' => [
+            ['label' => 'Portal de Sistemas', 'desc' => 'Volver al selector / cambiar de sistema', 'icon' => 'bi-grid-3x3-gap-fill', 'url' => 'http://localhost/ptp_portal/'],
+        ],
         // Consultas (CONSULTAS del menú viejo) — primero: la x Lote es la consulta central.
         'Consultas' => [
             ['label' => 'Órdenes de Proceso x Lote',   'desc' => 'Consulta central: sectores → lotes', 'icon' => 'bi-box-seam',  'url' => '/modules/odp_lote/'],
