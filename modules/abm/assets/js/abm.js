@@ -124,7 +124,7 @@ const App = {
         const listCols = this.DEF.campos.filter(c => c.list);
         const data = rows.map(r => {
             const arr = [r[this.DEF.pk]];
-            listCols.forEach(c => arr.push(c.tipo === 'bool' ? (r[c.col] ? 'Sí' : 'No') : (r[c.col] ?? '')));
+            listCols.forEach(c => arr.push(c.tipo === 'bool' ? (r[c.col] ? 'Sí' : 'No') : (r[c.col] != null ? r[c.col] : '')));
             return arr;
         });
         const self = this;
@@ -154,7 +154,7 @@ const App = {
     },
 
     populate(d) {
-        this.el('fCodigo').textContent = d[this.DEF.pk] ?? '—';
+        this.el('fCodigo').textContent = (d[this.DEF.pk] != null ? d[this.DEF.pk] : '—');
         this.DEF.campos.forEach(c => {
             const el = this.el('f_' + c.col); if (!el) return;
             if (c.tipo === 'bool') el.checked = !!d[c.col];
