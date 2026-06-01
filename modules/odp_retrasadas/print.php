@@ -7,7 +7,7 @@ auth_require_login();
 
 require __DIR__ . '/_query.php';
 $rows = retrasadas_rows();
-$dias = intval($_GET['dias'] ?? 0);
+$dias = intval((isset($_GET['dias']) ? $_GET['dias'] : 0));
 $empresa = sys('tagline', sys('name'));
 $tot = 0; foreach ($rows as $r) $tot += (float)$r['CANTIDAD'];
 ?>

@@ -13,7 +13,7 @@ require_once __DIR__ . '/../../includes/helpers.php';
 require_once __DIR__ . '/../../includes/auth.php';
 auth_require_login();
 
-$action = $_GET['action'] ?? $_POST['action'] ?? '';
+$action = (isset($_GET['action']) ? $_GET['action'] : (isset($_POST['action']) ? $_POST['action'] : ''));
 try {
     switch ($action) {
         case 'list':      listar(); break;
@@ -28,10 +28,10 @@ try {
 
 /** fase=confirmar → CODEDM=1 ; fase=entregar → CODEDM=2 */
 function listar() {
-    $fase = trim($_GET['fase'] ?? 'confirmar');
+    $fase = trim((isset($_GET['fase']) ? $_GET['fase'] : 'confirmar'));
     $estado = ($fase === 'entregar') ? 2 : 1;
     $w = ['(O.CODEDM = ' . $estado . ')'];
-    $q = trim($_GET['q'] ?? '');
+    $q = trim((isset($_GET['q']) ? $_GET['q'] : ''));
     if ($q !== '') { $e = db_esc($q); $w[] = "((O.NUMODM LIKE '%$e%') OR (C.DENCLI LIKE '%$e%') OR (M.DENMAR LIKE '%$e%') OR (O.NUMPTP LIKE '%$e%'))"; }
     $where = 'WHERE ' . implode(' AND ', $w);
     $rows = db_query("SELECT TOP 500 O.NUMODM AS ODM, O.FDEODM, C.DENCLI AS CLIENTE, M.DENMAR AS MARCA,
@@ -42,14 +42,14 @@ function listar() {
                       $where ORDER BY O.NUMODM DESC;");
     foreach ($rows as &$r) {
         $r['FDEODM'] = to_disp_date($r['FDEODM']);
-        $r['REMIT'] = (float) ($r['REMIT'] ?? 0);
+        $r['REMIT'] = (float) ((isset($r['REMIT']) ? $r['REMIT'] : 0));
         $r['PEND'] = (float) $r['CANT'] - $r['REMIT'];
     }
     ok($rows);
 }
 
 function ficha() {
-    $id = intval($_GET['id'] ?? 0);
+    $id = intval((isset($_GET['id']) ? $_GET['id'] : 0));
     $h = db_row("SELECT O.NUMODM, O.FDEODM, O.CANODM, O.CRMODM, O.NUMPTP, O.CODEDM, C.DENCLI, M.DENMAR
                  FROM (([Tbl Ordenes De Muestra] AS O
                    LEFT JOIN [Tbl Clientes] AS C ON O.CODCLI=C.CODCLI)
@@ -57,7 +57,7 @@ function ficha() {
                  WHERE O.NUMODM=$id;");
     if (!$h) { fail('Muestra no encontrada'); return; }
     $h['FDEODM'] = to_disp_date($h['FDEODM']);
-    $h['CRMODM'] = (float) ($h['CRMODM'] ?? 0);
+    $h['CRMODM'] = (float) ((isset($h['CRMODM']) ? $h['CRMODM'] : 0));
     $h['PEND'] = (float) $h['CANODM'] - $h['CRMODM'];
     $rem = db_query("SELECT ORDODM, FDRODM, CANODM FROM [Tbl Ordenes De Muestra Remitos] WHERE NUMODM=$id ORDER BY ORDODM;");
     foreach ($rem as &$x) $x['FDRODM'] = to_disp_date($x['FDRODM']);
@@ -66,7 +66,7 @@ function ficha() {
 
 function confirmar() {
     if (db_readonly()) { fail('Sistema en modo solo lectura'); return; }
-    $id = intval($_POST['__id'] ?? 0);
+    $id = intval((isset($_POST['__id']) ? $_POST['__id'] : 0));
     $o = db_row("SELECT CODEDM FROM [Tbl Ordenes De Muestra] WHERE NUMODM=$id;");
     if (!$o) { fail('Muestra no encontrada'); return; }
     if ((int) $o['CODEDM'] !== 1) { fail('La muestra no está Pendiente (no se puede confirmar)'); return; }
@@ -77,21 +77,21 @@ function confirmar() {
 
 function entregar() {
     if (db_readonly()) { fail('Sistema en modo solo lectura'); return; }
-    $id = intval($_POST['__id'] ?? 0);
-    $cant = (float) str_replace(',', '.', $_POST['cant'] ?? '0');
+    $id = intval((isset($_POST['__id']) ? $_POST['__id'] : 0));
+    $cant = (float) str_replace(',', '.', (isset($_POST['cant']) ? $_POST['cant'] : '0'));
     $o = db_row("SELECT CANODM, CRMODM, CODEDM FROM [Tbl Ordenes De Muestra] WHERE NUMODM=$id;");
     if (!$o) { fail('Muestra no encontrada'); return; }
     if ((int) $o['CODEDM'] !== 2) { fail('La muestra no está Confirmada (no se puede entregar)'); return; }
-    $can = (float) $o['CANODM']; $rem = (float) ($o['CRMODM'] ?? 0); $pend = $can - $rem;
+    $can = (float) $o['CANODM']; $rem = (float) ((isset($o['CRMODM']) ? $o['CRMODM'] : 0)); $pend = $can - $rem;
     if ($cant <= 0) { fail('Cantidad a remitir inválida'); return; }
     if ($cant > $pend) { fail('La cantidad supera lo pendiente (' . rtrim(rtrim(number_format($pend, 2, '.', ''), '0'), '.') . ')'); return; }
     $hoy = '#' . db_esc(fecha_access(date('d/m/Y'))) . '#';
-    $uid = intval($_SESSION['uid'] ?? 0);
+    $uid = intval((isset($_SESSION['uid']) ? $_SESSION['uid'] : 0));
 
     db_begin();
     try {
         $mx = db_row("SELECT Max(ORDODM) AS M FROM [Tbl Ordenes De Muestra Remitos] WHERE NUMODM=$id;");
-        $ord = (int) ($mx['M'] ?? 0) + 1;
+        $ord = (int) ((isset($mx['M']) ? $mx['M'] : 0)) + 1;
         db_exec("INSERT INTO [Tbl Ordenes De Muestra Remitos] ([NUMODM],[ORDODM],[FDRODM],[CANODM],[NUIODM],[NMIODM],[NOWODM])
                  VALUES ($id, $ord, $hoy, " . ($cant == (int) $cant ? (string) (int) $cant : (string) $cant) . ", $uid, 0, Now());");
         $nuevoRem = $rem + $cant;

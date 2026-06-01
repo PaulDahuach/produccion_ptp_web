@@ -10,7 +10,7 @@ require_once __DIR__ . '/../../includes/helpers.php';
 require_once __DIR__ . '/../../includes/auth.php';
 auth_require_login();
 
-$action = $_GET['action'] ?? $_POST['action'] ?? '';
+$action = (isset($_GET['action']) ? $_GET['action'] : (isset($_POST['action']) ? $_POST['action'] : ''));
 try {
     switch ($action) {
         case 'list':      listar(); break;
@@ -22,11 +22,11 @@ try {
 }
 
 function listar() {
-    $etapa = trim($_GET['etapa'] ?? '');
+    $etapa = trim((isset($_GET['etapa']) ? $_GET['etapa'] : ''));
     if ($etapa === '') { ok([]); return; }   // sin sector: nada que mostrar
     $where = ['(O.CODETA = ' . intval($etapa) . ')'];
 
-    $q = trim($_GET['q'] ?? '');
+    $q = trim((isset($_GET['q']) ? $_GET['q'] : ''));
     if ($q !== '') {
         $e = db_esc($q);
         $where[] = "((OPP.NUMODP LIKE '%$e%') OR (M.DENMAR LIKE '%$e%') OR (Prc.DENPRC LIKE '%$e%'))";

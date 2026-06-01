@@ -10,7 +10,7 @@ require_once __DIR__ . '/../../includes/helpers.php';
 require_once __DIR__ . '/../../includes/auth.php';
 auth_require_login();
 
-$action = $_GET['action'] ?? $_POST['action'] ?? '';
+$action = (isset($_GET['action']) ? $_GET['action'] : (isset($_POST['action']) ? $_POST['action'] : ''));
 try {
     switch ($action) {
         case 'init':           initData(); break;
@@ -48,7 +48,7 @@ function initData() {
 
 /** Marcas habilitadas para un cliente (subform Clientes_Marcas). */
 function marcasCliente() {
-    $cli = intval($_GET['cli'] ?? 0);
+    $cli = intval((isset($_GET['cli']) ? $_GET['cli'] : 0));
     ok(db_query("SELECT M.CODMAR AS id, M.DENMAR AS den
                  FROM [Tbl Clientes Marcas] AS CM INNER JOIN [Tbl Marcas] AS M ON CM.CODMAR = M.CODMAR
                  WHERE CM.CODCLI = $cli ORDER BY M.DENMAR;"));
@@ -56,7 +56,7 @@ function marcasCliente() {
 
 /** Colores por defecto de una tela (CODTEL_AfterUpdate). */
 function telaColores() {
-    $tel = intval($_GET['tel'] ?? 0);
+    $tel = intval((isset($_GET['tel']) ? $_GET['tel'] : 0));
     $r = db_row("SELECT CODCT1, CODCT2 FROM [Tbl Telas] WHERE CODTEL = $tel;");
     ok($r ?: ['CODCT1' => null, 'CODCT2' => null]);
 }
@@ -77,7 +77,7 @@ function listar() {
 
 /** Ficha de una orden (para ver). */
 function obtener() {
-    $id = intval($_GET['id'] ?? 0);
+    $id = intval((isset($_GET['id']) ? $_GET['id'] : 0));
     $sql = "SELECT O.*, C.DENCLI, M.DENMAR, T.DENTAL, P1.DENPRE AS DENPR1, P2.DENPRE AS DENPR2,
               Tl.DENTEL, A.DENADO
             FROM ((((((([Tbl Ordenes De Proceso] AS O
@@ -108,14 +108,14 @@ function crear() {
     $req = ['REMODP' => 'Remito', 'CODCLI' => 'Cliente', 'CODMAR' => 'Marca', 'CODTAL' => 'Taller',
             'CODPR1' => 'Prenda', 'CANODP' => 'Cantidad', 'PESODP' => 'Peso'];
     foreach ($req as $k => $lbl) {
-        if (trim((string) ($_POST[$k] ?? '')) === '') { fail("Falta: $lbl"); return; }
+        if (trim((string) ((isset($_POST[$k]) ? $_POST[$k] : ''))) === '') { fail("Falta: $lbl"); return; }
     }
 
-    $codado = intval($_POST['CODADO'] ?? 1) ?: 1;
-    $repodp = ($codado === 1) ? 'Null' : sqlInt($_POST['REPODP'] ?? '');
+    $codado = intval((isset($_POST['CODADO']) ? $_POST['CODADO'] : 1)) ?: 1;
+    $repodp = ($codado === 1) ? 'Null' : sqlInt((isset($_POST['REPODP']) ? $_POST['REPODP'] : ''));
     $cant   = sqlInt($_POST['CANODP']);
     $prt    = (!empty($_POST['PRTODP']) && $_POST['PRTODP'] !== '0') ? 'True' : 'False';
-    $uid    = intval($_SESSION['uid'] ?? 0);
+    $uid    = intval((isset($_SESSION['uid']) ? $_SESSION['uid'] : 0));
 
     // Fecha de trabajo (FECAPE) → literal Access #mm/dd/yyyy#
     $rc = db_row("SELECT FECAPE FROM [Rec Control];");
@@ -133,16 +133,16 @@ function crear() {
         $vals = [
             $num, $fdr, '20', (string) $codado, $repodp, sqlTxt($_POST['REMODP']),
             sqlInt($_POST['CODCLI']), sqlInt($_POST['CODMAR']), sqlInt($_POST['CODTAL']),
-            sqlTxt($_POST['OCNODP'] ?? ''), sqlTxt($_POST['CAXODP'] ?? ''), sqlInt($_POST['CODPR1']),
+            sqlTxt((isset($_POST['OCNODP']) ? $_POST['OCNODP'] : '')), sqlTxt((isset($_POST['CAXODP']) ? $_POST['CAXODP'] : '')), sqlInt($_POST['CODPR1']),
             $cant, '0', $cant, '0', sqlDec($_POST['PESODP']), $prt,
-            sqlTxt($_POST['PREODP'] ?? ''), sqlInt($_POST['NUMPTP'] ?? ''), sqlInt($_POST['CODPR2'] ?? ''),
-            sqlInt($_POST['CODTEL'] ?? ''), sqlInt($_POST['CODCT1'] ?? ''), sqlInt($_POST['CODCT2'] ?? ''),
-            sqlTxt($_POST['O10ODP'] ?? ''), (string) $uid, '0', 'Now()',
+            sqlTxt((isset($_POST['PREODP']) ? $_POST['PREODP'] : '')), sqlInt((isset($_POST['NUMPTP']) ? $_POST['NUMPTP'] : '')), sqlInt((isset($_POST['CODPR2']) ? $_POST['CODPR2'] : '')),
+            sqlInt((isset($_POST['CODTEL']) ? $_POST['CODTEL'] : '')), sqlInt((isset($_POST['CODCT1']) ? $_POST['CODCT1'] : '')), sqlInt((isset($_POST['CODCT2']) ? $_POST['CODCT2'] : '')),
+            sqlTxt((isset($_POST['O10ODP']) ? $_POST['O10ODP'] : '')), (string) $uid, '0', 'Now()',
         ];
         db_exec("INSERT INTO [Tbl Ordenes De Proceso] ([" . implode('],[', $cols) . "]) VALUES (" . implode(',', $vals) . ");");
 
         // Lote inicial (sector destino 20=Programación, origen 10=Recepción)
-        $obs = sqlTxt($_POST['O10ODP'] ?? '');
+        $obs = sqlTxt((isset($_POST['O10ODP']) ? $_POST['O10ODP'] : ''));
         $lc = ['NUMODP', 'ORDODP', 'LOTODP', 'FEXODP', 'FIPODP', 'HIPODP', 'FFPODP', 'HFPODP',
                'CIPODP', 'CANODP', 'REZODP', 'DSPODP', 'OBSODP', 'CSDODP', 'OPOODP', 'CSOODP'];
         $lv = [$num, '-2', '1', $fdr, $fdr, 'Now()', $fdr, 'Now()',
@@ -163,7 +163,7 @@ function crear() {
  */
 function anular() {
     if (db_readonly()) { fail('Sistema en modo solo-lectura', 403); return; }
-    $id = intval($_POST['__id'] ?? $_GET['id'] ?? 0);
+    $id = intval((isset($_POST['__id']) ? $_POST['__id'] : (isset($_GET['id']) ? $_GET['id'] : 0)));
     if ($id <= 0) { fail('Falta la orden'); return; }
 
     $o = db_row("SELECT CODETA, NUIODP, NMIODP, OBSODP FROM [Tbl Ordenes De Proceso] WHERE NUMODP = $id;");
@@ -176,9 +176,9 @@ function anular() {
 
     $rc = db_row("SELECT FECAPE FROM [Rec Control];");
     $fecha = to_iso_date($rc['FECAPE']);   // yyyy-mm-dd
-    $uid = intval($_SESSION['uid'] ?? 0);
+    $uid = intval((isset($_SESSION['uid']) ? $_SESSION['uid'] : 0));
     $nota = "[ANULADO $fecha, E:$codeta, U:" . intval($o['NUIODP']) . ", M:" . intval($o['NMIODP']) . "] \r\n";
-    $obs = $nota . (string) ($o['OBSODP'] ?? '');
+    $obs = $nota . (string) ((isset($o['OBSODP']) ? $o['OBSODP'] : ''));
 
     db_begin();
     try {

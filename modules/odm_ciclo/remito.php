@@ -10,8 +10,8 @@ require_once __DIR__ . '/../../includes/helpers.php';
 require_once __DIR__ . '/../../includes/auth.php';
 auth_require_login();
 
-$numodm = intval($_GET['numodm'] ?? 0);
-$ordodm = intval($_GET['ordodm'] ?? 0);
+$numodm = intval((isset($_GET['numodm']) ? $_GET['numodm'] : 0));
+$ordodm = intval((isset($_GET['ordodm']) ? $_GET['ordodm'] : 0));
 if ($numodm <= 0 || $ordodm <= 0) { http_response_code(400); echo 'Faltan parámetros.'; exit; }
 
 $r = db_row("SELECT R.NUMODM, R.ORDODM, R.FDRODM, R.CANODM AS CANREM,

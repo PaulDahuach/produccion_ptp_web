@@ -10,10 +10,10 @@ require_once __DIR__ . '/../../includes/auth.php';
 auth_require_login();
 
 $where = ['(O.CODETA > 0)'];
-$etapa = trim($_GET['etapa'] ?? '');
-$desde = trim($_GET['desde'] ?? '');
-$hasta = trim($_GET['hasta'] ?? '');
-$q     = trim($_GET['q'] ?? '');
+$etapa = trim((isset($_GET['etapa']) ? $_GET['etapa'] : ''));
+$desde = trim((isset($_GET['desde']) ? $_GET['desde'] : ''));
+$hasta = trim((isset($_GET['hasta']) ? $_GET['hasta'] : ''));
+$q     = trim((isset($_GET['q']) ? $_GET['q'] : ''));
 if ($etapa !== '') $where[] = '(O.CODETA = ' . intval($etapa) . ')';
 if ($desde !== '') $where[] = "(O.FDRODP >= #" . db_esc(fecha_access($desde)) . "#)";
 if ($hasta !== '') $where[] = "(O.FDRODP <= #" . db_esc(fecha_access($hasta)) . "#)";

@@ -5,8 +5,8 @@ require_once __DIR__ . '/../../includes/layout.php';
 auth_require_login();
 
 $DEFS = require __DIR__ . '/defs.php';
-$m = $_GET['m'] ?? '';
-$def = $DEFS[$m] ?? null;
+$m = (isset($_GET['m']) ? $_GET['m'] : '');
+$def = (isset($DEFS[$m]) ? $DEFS[$m] : null);
 if (!$def) { module_head('Maestro', 'bi-table'); echo '<div class="alert alert-danger">Maestro inválido.</div>'; module_foot(); exit; }
 
 $ro = db_readonly();
@@ -23,7 +23,7 @@ if (!$ro) $toolbar .=
     '<button id="btnEliminar" class="btn btn-outline-danger btn-sm" disabled><i class="bi bi-trash me-1"></i>Eliminar</button>';
 $toolbar .= '</div>';
 
-module_head($def['titulo'], $def['icono'] ?? 'bi-table', $toolbar);
+module_head($def['titulo'], (isset($def['icono']) ? $def['icono'] : 'bi-table'), $toolbar);
 ?>
 <link href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css" rel="stylesheet">
 <link href="assets/css/abm.css" rel="stylesheet">
@@ -32,7 +32,7 @@ module_head($def['titulo'], $def['icono'] ?? 'bi-table', $toolbar);
 <div class="fc-form mode-view" id="mainForm">
   <div class="card fc-card">
     <div class="card-header" data-bs-toggle="collapse" data-bs-target="#cMain">
-      <span><i class="bi <?= h($def['icono'] ?? 'bi-table') ?> me-1"></i><?= h($def['titulo']) ?>
+      <span><i class="bi <?= h((isset($def['icono']) ? $def['icono'] : 'bi-table')) ?> me-1"></i><?= h($def['titulo']) ?>
         <span class="text-muted ms-2" style="text-transform:none">Código: <span id="fCodigo">—</span></span></span>
       <i class="bi bi-chevron-down collapse-icon"></i>
     </div>

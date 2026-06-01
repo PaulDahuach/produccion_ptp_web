@@ -19,7 +19,7 @@ require_once __DIR__ . '/../../includes/helpers.php';
 require_once __DIR__ . '/../../includes/auth.php';
 auth_require_login();
 
-$action = $_GET['action'] ?? $_POST['action'] ?? '';
+$action = (isset($_GET['action']) ? $_GET['action'] : (isset($_POST['action']) ? $_POST['action'] : ''));
 try {
     switch ($action) {
         case 'init':       initData(); break;
@@ -42,7 +42,7 @@ function initData() { ok(['readonly' => db_readonly(), 'fechaDisp' => date('d/m/
 /** ODM candidatas para presupuestar (no anuladas). */
 function buscarOdm() {
     $w = ['(O.CODEDM NOT IN (3,5))', '(O.NUMPTP > 0)'];
-    $q = trim($_GET['q'] ?? '');
+    $q = trim((isset($_GET['q']) ? $_GET['q'] : ''));
     if ($q !== '') { $e = db_esc($q); $w[] = "((O.NUMODM LIKE '%$e%') OR (C.DENCLI LIKE '%$e%') OR (M.DENMAR LIKE '%$e%') OR (O.NUMPTP LIKE '%$e%'))"; }
     $where = 'WHERE ' . implode(' AND ', $w);
     $rows = db_query("SELECT TOP 300 O.NUMODM AS ODM, O.FDEODM, C.DENCLI AS CLIENTE, M.DENMAR AS MARCA, O.NUMPTP AS PTP
@@ -56,7 +56,7 @@ function buscarOdm() {
 
 /** Carga la cabecera + líneas (con SUG=NETPRC) a partir de una Orden de Muestra. */
 function cargarOdm() {
-    $numodm = intval($_GET['numodm'] ?? 0);
+    $numodm = intval((isset($_GET['numodm']) ? $_GET['numodm'] : 0));
     $o = db_row("SELECT O.NUMODM, O.NUMPTP, O.CODCLI, C.DENCLI, M.DENMAR
                  FROM (([Tbl Ordenes De Muestra] AS O
                    LEFT JOIN [Tbl Clientes] AS C ON O.CODCLI=C.CODCLI)
@@ -84,7 +84,7 @@ function cargarOdm() {
 /** Presupuestos existentes (para Buscar). */
 function listar() {
     $w = ['(P.ANUPPP=False OR P.ANUPPP Is Null)'];
-    $q = trim($_GET['q'] ?? '');
+    $q = trim((isset($_GET['q']) ? $_GET['q'] : ''));
     if ($q !== '') { $e = db_esc($q); $w[] = "((P.NUMPPP LIKE '%$e%') OR (C.DENCLI LIKE '%$e%') OR (P.NUMPTP LIKE '%$e%'))"; }
     $where = 'WHERE ' . implode(' AND ', $w);
     $rows = db_query("SELECT TOP 500 P.NUMPPP AS PPP, P.FEXPPP, C.DENCLI AS CLIENTE, P.NUMPTP AS PTP, P.TOTPPP AS TOTAL
@@ -96,7 +96,7 @@ function listar() {
 
 /** Presupuesto existente para editar. */
 function obtener() {
-    $id = intval($_GET['id'] ?? 0);
+    $id = intval((isset($_GET['id']) ? $_GET['id'] : 0));
     $h = db_row("SELECT P.NUMPPP, P.FEXPPP, P.NUMPTP, P.NUMODM, P.CODCLI, P.CODPRE, P.PDPPPP, P.PDCPPP,
                    P.NT0PPP, P.IDPPPP, P.NT1PPP, P.IDCPPP, P.TOTPPP, P.OBSPPP, C.DENCLI, Pre.DENPRE
                  FROM (([Tbl Presupuestos PTP] AS P
@@ -115,37 +115,37 @@ function obtener() {
 
 function guardar() {
     if (db_readonly()) { fail('Sistema en modo solo lectura'); return; }
-    $id     = intval($_POST['NUMPPP'] ?? 0);   // 0 = alta
-    $numodm = intval($_POST['NUMODM'] ?? 0);
-    $numptp = intval($_POST['NUMPTP'] ?? 0);
-    $cli    = intval($_POST['CODCLI'] ?? 0);
-    $pre    = trim($_POST['CODPRE'] ?? '');
-    $fec    = trim($_POST['FEXPPP'] ?? '');
-    $pdp    = (float) str_replace(',', '.', $_POST['PDPPPP'] ?? '0');
-    $pdc    = (float) str_replace(',', '.', $_POST['PDCPPP'] ?? '0');
-    $obs    = trim($_POST['OBSPPP'] ?? '');
-    $lineas = json_decode($_POST['__lineas'] ?? '[]', true); if (!is_array($lineas)) $lineas = [];
-    $lineas = array_values(array_filter($lineas, function ($l) { return intval($l['CODPRC'] ?? 0) > 0; }));
+    $id     = intval((isset($_POST['NUMPPP']) ? $_POST['NUMPPP'] : 0));   // 0 = alta
+    $numodm = intval((isset($_POST['NUMODM']) ? $_POST['NUMODM'] : 0));
+    $numptp = intval((isset($_POST['NUMPTP']) ? $_POST['NUMPTP'] : 0));
+    $cli    = intval((isset($_POST['CODCLI']) ? $_POST['CODCLI'] : 0));
+    $pre    = trim((isset($_POST['CODPRE']) ? $_POST['CODPRE'] : ''));
+    $fec    = trim((isset($_POST['FEXPPP']) ? $_POST['FEXPPP'] : ''));
+    $pdp    = (float) str_replace(',', '.', (isset($_POST['PDPPPP']) ? $_POST['PDPPPP'] : '0'));
+    $pdc    = (float) str_replace(',', '.', (isset($_POST['PDCPPP']) ? $_POST['PDCPPP'] : '0'));
+    $obs    = trim((isset($_POST['OBSPPP']) ? $_POST['OBSPPP'] : ''));
+    $lineas = json_decode((isset($_POST['__lineas']) ? $_POST['__lineas'] : '[]'), true); if (!is_array($lineas)) $lineas = [];
+    $lineas = array_values(array_filter($lineas, function ($l) { return intval((isset($l['CODPRC']) ? $l['CODPRC'] : 0)) > 0; }));
 
     if ($cli <= 0)   { fail('Falta el cliente (cargá una Orden de Muestra)'); return; }
     if (!$lineas)    { fail('No hay procesos para presupuestar'); return; }
     $fecSql = '#' . db_esc(fecha_access($fec !== '' ? $fec : date('d/m/Y'))) . '#';
-    $uid = intval($_SESSION['uid'] ?? 0);
+    $uid = intval((isset($_SESSION['uid']) ? $_SESSION['uid'] : 0));
 
     // Recalcular TODO en el servidor (autoritativo)
     $nt0 = 0; $idp = 0; $nt1 = 0; $idc = 0; $tot = 0;
     $calc = [];
     foreach ($lineas as $l) {
-        $sug = (float) str_replace(',', '.', $l['SUG'] ?? '0');
+        $sug = (float) str_replace(',', '.', (isset($l['SUG']) ? $l['SUG'] : '0'));
         $pbx = isset($l['PBX']) && trim((string) $l['PBX']) !== '' ? (float) str_replace(',', '.', $l['PBX']) : $pdc;
         $ibp = r4($sug * $pdp / 100);
         $prec = r4($sug - $ibp);
         $ibx = r4($prec * $pbx / 100);
         $net = r4($prec - $ibx);
         $nt0 += $sug; $idp += $ibp; $nt1 += $prec; $idc += $ibx; $tot += $net;
-        $calc[] = ['CODPRC' => intval($l['CODPRC']), 'PDL' => r4($l['PDL'] ?? $sug), 'SUG' => r4($sug),
+        $calc[] = ['CODPRC' => intval($l['CODPRC']), 'PDL' => r4((isset($l['PDL']) ? $l['PDL'] : $sug)), 'SUG' => r4($sug),
                    'IBP' => $ibp, 'PRE' => $prec, 'PBX' => r4($pbx), 'IBX' => $ibx, 'NET' => $net,
-                   'OBS' => trim((string) ($l['OBS'] ?? ''))];
+                   'OBS' => trim((string) ((isset($l['OBS']) ? $l['OBS'] : '')))];
     }
     $nt0 = r4($nt0); $idp = r4($idp); $nt1 = r4($nt1); $idc = r4($idc); $tot = r4($tot);
 
@@ -183,7 +183,7 @@ function sqlTxtP($v) { $v = trim((string) $v); return $v === '' ? 'Null' : "'" .
 
 function anular() {
     if (db_readonly()) { fail('Sistema en modo solo lectura'); return; }
-    $id = intval($_POST['__id'] ?? 0);
+    $id = intval((isset($_POST['__id']) ? $_POST['__id'] : 0));
     if ($id <= 0) { fail('Falta el presupuesto'); return; }
     db_exec("UPDATE [Tbl Presupuestos PTP] SET ANUPPP=True WHERE NUMPPP=$id;");
     ok(['numppp' => $id]);

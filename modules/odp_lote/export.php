@@ -12,21 +12,21 @@ auth_require_login();
 
 function filtros_where() {
     $w = ['(L.DSPODP > 0)', '(O.CODETA > 0)', '(O.CODETA <> 120)'];
-    $desde = trim($_GET['desde'] ?? ''); $hasta = trim($_GET['hasta'] ?? '');
+    $desde = trim((isset($_GET['desde']) ? $_GET['desde'] : '')); $hasta = trim((isset($_GET['hasta']) ? $_GET['hasta'] : ''));
     if ($desde !== '') $w[] = "(O.FDRODP >= #" . db_esc(fecha_access($desde)) . "#)";
     if ($hasta !== '') $w[] = "(O.FDRODP <= #" . db_esc(fecha_access($hasta)) . "#)";
-    $odp = trim($_GET['odp'] ?? ''); if ($odp !== '') $w[] = '(O.NUMODP = ' . intval($odp) . ')';
-    $oc = trim($_GET['ocorte'] ?? ''); if ($oc !== '') $w[] = "(O.OCNODP = '" . db_esc($oc) . "')";
-    $cli = trim($_GET['cli'] ?? ''); if ($cli !== '') $w[] = '(O.CODCLI = ' . intval($cli) . ')';
-    $mar = trim($_GET['mar'] ?? ''); if ($mar !== '') $w[] = '(O.CODMAR = ' . intval($mar) . ')';
-    $pre = trim($_GET['pre'] ?? ''); if ($pre !== '') $w[] = '(O.CODPR1 = ' . intval($pre) . ')';
-    $art = trim($_GET['art'] ?? ''); if ($art !== '') $w[] = "(O.CAXODP = '" . db_esc($art) . "')";
-    $prc = trim($_GET['prc'] ?? '');
+    $odp = trim((isset($_GET['odp']) ? $_GET['odp'] : '')); if ($odp !== '') $w[] = '(O.NUMODP = ' . intval($odp) . ')';
+    $oc = trim((isset($_GET['ocorte']) ? $_GET['ocorte'] : '')); if ($oc !== '') $w[] = "(O.OCNODP = '" . db_esc($oc) . "')";
+    $cli = trim((isset($_GET['cli']) ? $_GET['cli'] : '')); if ($cli !== '') $w[] = '(O.CODCLI = ' . intval($cli) . ')';
+    $mar = trim((isset($_GET['mar']) ? $_GET['mar'] : '')); if ($mar !== '') $w[] = '(O.CODMAR = ' . intval($mar) . ')';
+    $pre = trim((isset($_GET['pre']) ? $_GET['pre'] : '')); if ($pre !== '') $w[] = '(O.CODPR1 = ' . intval($pre) . ')';
+    $art = trim((isset($_GET['art']) ? $_GET['art'] : '')); if ($art !== '') $w[] = "(O.CAXODP = '" . db_esc($art) . "')";
+    $prc = trim((isset($_GET['prc']) ? $_GET['prc'] : ''));
     if ($prc !== '') $w[] = "(EXISTS (SELECT 1 FROM [Tbl Ordenes De Proceso Procesos] AS OPPf WHERE OPPf.NUMODP = O.NUMODP AND OPPf.CODPRC = " . intval($prc) . "))";
     return $w;
 }
 
-$sector = trim($_GET['sector'] ?? '');
+$sector = trim((isset($_GET['sector']) ? $_GET['sector'] : ''));
 if ($sector === '') { http_response_code(400); echo 'Seleccione un sector.'; exit; }
 
 $secExpr = "IIF(O.CODETA=30,'PROGRAMACION',E.DENETA)";

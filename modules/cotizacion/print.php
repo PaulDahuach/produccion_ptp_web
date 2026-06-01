@@ -10,7 +10,7 @@ require_once __DIR__ . '/../../includes/helpers.php';
 require_once __DIR__ . '/../../includes/auth.php';
 auth_require_login();
 
-$id = intval($_GET['id'] ?? 0);
+$id = intval((isset($_GET['id']) ? $_GET['id'] : 0));
 if ($id <= 0) { http_response_code(400); echo 'Falta el N° de presupuesto.'; exit; }
 
 $h = db_row("SELECT P.NUMPPP, P.FEXPPP, P.NUMPTP, P.TOTPPP, P.OBSPPP, C.DENCLI, Pre.DENPRE

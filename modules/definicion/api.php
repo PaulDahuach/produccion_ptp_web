@@ -11,7 +11,7 @@ require_once __DIR__ . '/../../includes/helpers.php';
 require_once __DIR__ . '/../../includes/auth.php';
 auth_require_login();
 
-$action = $_GET['action'] ?? $_POST['action'] ?? '';
+$action = (isset($_GET['action']) ? $_GET['action'] : (isset($_POST['action']) ? $_POST['action'] : ''));
 try {
     switch ($action) {
         case 'init':          initData(); break;
@@ -56,7 +56,7 @@ function listar() {
 
 /** Cabecera de una orden recibida (datos de recepción, para mostrar). */
 function obtener() {
-    $id = intval($_GET['id'] ?? 0);
+    $id = intval((isset($_GET['id']) ? $_GET['id'] : 0));
     $sql = "SELECT O.NUMODP, O.CODETA, O.FDRODP, O.CANODP, O.REMODP, O.OCNODP, O.CAXODP, O.NUMPTP,
               O.O10ODP, O.O20ODP, C.DENCLI, M.DENMAR, T.DENTAL, P1.DENPRE AS DENPR1, Tl.DENTEL
             FROM ((((([Tbl Ordenes De Proceso] AS O
@@ -75,7 +75,7 @@ function obtener() {
 
 /** Procesos de un PTP (para "Cargar del PTP"). */
 function ptpProcesos() {
-    $ptp = intval($_GET['ptp'] ?? 0);
+    $ptp = intval((isset($_GET['ptp']) ? $_GET['ptp'] : 0));
     $sql = "SELECT PP.ORDPTP, PP.CODPRC, P.DENPRC, PP.CODCDP, CP.DENCDP, PP.PORPTP, PP.OBSPTP
             FROM (([Tbl PTP Procesos] AS PP
               LEFT JOIN [Tbl Procesos] AS P ON PP.CODPRC=P.CODPRC)
@@ -101,7 +101,7 @@ function sqlTxt($v) { $v = trim((string) $v); return $v === '' ? 'Null' : "'" . 
 /** Define la orden: avanza a CODETA=30 + procesos + OEP + lote (transacción). */
 function definir() {
     if (db_readonly()) { fail('Sistema en modo solo-lectura', 403); return; }
-    $id = intval($_POST['__id'] ?? 0);
+    $id = intval((isset($_POST['__id']) ? $_POST['__id'] : 0));
     if ($id <= 0) { fail('Falta la orden'); return; }
 
     $o = db_row("SELECT CODETA, CANODP FROM [Tbl Ordenes De Proceso] WHERE NUMODP = $id;");
@@ -109,21 +109,21 @@ function definir() {
     if (intval($o['CODETA']) !== 20) { fail('La orden no está pendiente de definición'); return; }
     $cant = intval($o['CANODP']);
 
-    $procs = json_decode($_POST['__procesos'] ?? '[]', true);
+    $procs = json_decode((isset($_POST['__procesos']) ? $_POST['__procesos'] : '[]'), true);
     if (!is_array($procs)) $procs = [];
-    $procs = array_values(array_filter($procs, function ($p) { return intval($p['CODPRC'] ?? 0) > 0; }));
+    $procs = array_values(array_filter($procs, function ($p) { return intval((isset($p['CODPRC']) ? $p['CODPRC'] : 0)) > 0; }));
     if (!count($procs)) { fail('Definí al menos un proceso para la orden'); return; }
 
     $rc = db_row("SELECT FECAPE FROM [Rec Control];");
     $iso = to_iso_date($rc['FECAPE']);
     $p = explode('-', $iso);
     $fdd = "#{$p[1]}/{$p[2]}/{$p[0]}#";
-    $uid = intval($_SESSION['uid'] ?? 0);
+    $uid = intval((isset($_SESSION['uid']) ? $_SESSION['uid'] : 0));
     $cdo = function_exists('mt_rand') ? mt_rand(0, 39) : 0;
     $bar = 'OP' . str_pad((string) $id, 8, '0', STR_PAD_LEFT);
     $bar .= modulo10(str_pad((string) $id, 8, '0', STR_PAD_LEFT));
-    $o20 = sqlTxt($_POST['O20ODP'] ?? '');
-    $numptp = sqlInt($_POST['NUMPTP'] ?? '');
+    $o20 = sqlTxt((isset($_POST['O20ODP']) ? $_POST['O20ODP'] : ''));
+    $numptp = sqlInt((isset($_POST['NUMPTP']) ? $_POST['NUMPTP'] : ''));
 
     db_begin();
     try {
@@ -138,9 +138,9 @@ function definir() {
         $ord = 0;
         foreach ($procs as $pr) {
             $ord++;
-            $cp  = sqlInt($pr['CODCDP'] ?? '');
-            $por = (trim((string) ($pr['PORODP'] ?? '')) === '') ? 'Null' : sqlDec($pr['PORODP']);
-            $obs = sqlTxt($pr['OBSODP'] ?? '');
+            $cp  = sqlInt((isset($pr['CODCDP']) ? $pr['CODCDP'] : ''));
+            $por = (trim((string) ((isset($pr['PORODP']) ? $pr['PORODP'] : ''))) === '') ? 'Null' : sqlDec($pr['PORODP']);
+            $obs = sqlTxt((isset($pr['OBSODP']) ? $pr['OBSODP'] : ''));
             $cols = ['NUMODP', 'ORDODP', 'CODPRC', 'CODCDP', 'PORODP', 'OBSODP'];
             $vals = [(string) $id, (string) $ord, (string) intval($pr['CODPRC']), $cp, $por, $obs];
             if ($ord === 1) { $cols[] = 'FEXODP'; $vals[] = $fdd; $cols[] = 'CANODP'; $vals[] = (string) $cant; }

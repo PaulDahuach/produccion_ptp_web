@@ -5,11 +5,11 @@ require_once __DIR__ . '/../../includes/layout.php';
 auth_require_login();
 
 $DEFS = require __DIR__ . '/defs.php';
-$r = $_GET['r'] ?? '';
-$def = $DEFS[$r] ?? null;
+$r = (isset($_GET['r']) ? $_GET['r'] : '');
+$def = (isset($DEFS[$r]) ? $DEFS[$r] : null);
 if (!$def) { module_head('Reportes', 'bi-bar-chart'); echo '<div class="alert alert-danger">Reporte inválido.</div>'; module_foot(); exit; }
 
-module_head($def['titulo'], $def['icono'] ?? 'bi-bar-chart',
+module_head($def['titulo'], (isset($def['icono']) ? $def['icono'] : 'bi-bar-chart'),
     '<button id="btnReload" class="btn btn-outline-light btn-sm"><i class="bi bi-arrow-clockwise me-1"></i>Refrescar</button>' .
     '<button id="btnPrint" class="btn btn-outline-light btn-sm ms-1"><i class="bi bi-printer me-1"></i>Imprimir</button>');
 ?>

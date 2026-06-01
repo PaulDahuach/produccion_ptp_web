@@ -12,7 +12,7 @@ require_once __DIR__ . '/../../includes/helpers.php';
 require_once __DIR__ . '/../../includes/auth.php';
 auth_require_login();
 
-$action = $_GET['action'] ?? '';
+$action = (isset($_GET['action']) ? $_GET['action'] : '');
 try {
     switch ($action) {
         case 'init': init(); break;

@@ -11,9 +11,9 @@ require_once __DIR__ . '/../../includes/auth.php';
 auth_require_login();
 
 $DEFS = require __DIR__ . '/defs.php';
-$action = $_GET['action'] ?? '';
-$m = $_GET['m'] ?? '';
-$def = $DEFS[$m] ?? null;
+$action = (isset($_GET['action']) ? $_GET['action'] : '');
+$m = (isset($_GET['m']) ? $_GET['m'] : '');
+$def = (isset($DEFS[$m]) ? $DEFS[$m] : null);
 if (!$def) { fail('Maestro inválido: ' . $m); exit; }
 
 try {
@@ -65,7 +65,7 @@ function conv_fechas(&$row, $campos, $fmt) {
 }
 
 function buscarHijo($def, $key) {
-    foreach (($def['hijos'] ?? []) as $h) if ($h['key'] === $key) return $h;
+    foreach (((isset($def['hijos']) ? $def['hijos'] : [])) as $h) if ($h['key'] === $key) return $h;
     return null;
 }
 
@@ -76,7 +76,7 @@ function defs($def) {
         if ($c['tipo'] === 'select' && isset($c['lookup'])) $c['options'] = opciones($c['lookup']);
         $out['campos'][] = $c;
     }
-    foreach (($def['hijos'] ?? []) as $h) {
+    foreach (((isset($def['hijos']) ? $def['hijos'] : [])) as $h) {
         $clave = ['tipo' => $h['clave']['tipo'], 'col' => $h['clave']['col']];
         if ($h['clave']['tipo'] === 'select') {
             $clave['label'] = $h['clave']['label'];
@@ -107,19 +107,19 @@ function listar($def) {
             if ($c['tipo'] === 'date') $dateCols[] = $c;
         }
     }
-    $orden = $def['orden'] ?? $pk;
+    $orden = (isset($def['orden']) ? $def['orden'] : $pk);
     $rows = db_query("SELECT " . implode(', ', $sel) . " FROM [{$def['tabla']}] AS M$joins ORDER BY M.[$orden];");
     if ($dateCols) foreach ($rows as &$r) conv_fechas($r, $dateCols, 'disp');
     ok($rows);
 }
 
 function obtener($def) {
-    $id = intval($_GET['id'] ?? 0);
+    $id = intval((isset($_GET['id']) ? $_GET['id'] : 0));
     $row = db_row("SELECT * FROM [{$def['tabla']}] WHERE [{$def['pk']}] = $id;");
     if (!$row) { fail('Registro no encontrado'); return; }
     conv_fechas($row, $def['campos'], 'iso');
     $row['__hijos'] = [];
-    foreach (($def['hijos'] ?? []) as $h) $row['__hijos'][$h['key']] = childRows($h, $id);
+    foreach (((isset($def['hijos']) ? $def['hijos'] : [])) as $h) $row['__hijos'][$h['key']] = childRows($h, $id);
     ok($row);
 }
 
@@ -150,11 +150,11 @@ function childRows($h, $pid) {
 function guardar($def) {
     if (db_readonly()) { fail('Sistema en modo solo-lectura', 403); return; }
     $pk = $def['pk'];
-    $id = trim($_POST['__id'] ?? '');
+    $id = trim((isset($_POST['__id']) ? $_POST['__id'] : ''));
     $cols = []; $vals = [];
     foreach ($def['campos'] as $c) {
         $err = null;
-        $lit = val_sql($c, $_POST[$c['col']] ?? '', $err);
+        $lit = val_sql($c, (isset($_POST[$c['col']]) ? $_POST[$c['col']] : ''), $err);
         if ($err) { fail($err); return; }
         $cols[] = $c['col']; $vals[] = $lit;
     }
@@ -177,11 +177,11 @@ function guardar($def) {
 
 /** Reemplaza las filas hijas enviadas (delete-all + reinsert por padre). */
 function guardarHijos($def, $pid) {
-    $raw = $_POST['__hijos'] ?? '';
+    $raw = (isset($_POST['__hijos']) ? $_POST['__hijos'] : '');
     if ($raw === '') return;
     $hijos = json_decode($raw, true);
     if (!is_array($hijos)) return;
-    foreach (($def['hijos'] ?? []) as $h) {
+    foreach (((isset($def['hijos']) ? $def['hijos'] : [])) as $h) {
         if (!array_key_exists($h['key'], $hijos)) continue;   // hijo no enviado → no tocar
         $rows = is_array($hijos[$h['key']]) ? $hijos[$h['key']] : [];
         $fk = $h['fk']; $kc = $h['clave']['col']; $tabla = $h['tabla'];
@@ -190,14 +190,14 @@ function guardarHijos($def, $pid) {
         foreach ($rows as $r) {
             if ($h['clave']['tipo'] === 'auto') { $keyVal = ++$line; }
             else {
-                $keyVal = intval($r[$kc] ?? 0);
+                $keyVal = intval((isset($r[$kc]) ? $r[$kc] : 0));
                 if ($keyVal <= 0 || in_array($keyVal, $seen, true)) continue;
                 $seen[] = $keyVal;
             }
             $cols = [$fk, $kc]; $vals = [(string) $pid, (string) $keyVal];
             foreach ($h['campos'] as $c) {
                 $err = null;
-                $lit = val_sql($c, $r[$c['col']] ?? '', $err);
+                $lit = val_sql($c, (isset($r[$c['col']]) ? $r[$c['col']] : ''), $err);
                 if ($err) $lit = 'Null';
                 $cols[] = $c['col']; $vals[] = $lit;
             }
@@ -208,10 +208,10 @@ function guardarHijos($def, $pid) {
 
 function borrar($def) {
     if (db_readonly()) { fail('Sistema en modo solo-lectura', 403); return; }
-    $id = intval($_POST['__id'] ?? $_GET['id'] ?? 0);
+    $id = intval((isset($_POST['__id']) ? $_POST['__id'] : (isset($_GET['id']) ? $_GET['id'] : 0)));
     if ($id <= 0) { fail('Falta id'); return; }
     // Las sub-tablas son propiedad del padre: borrarlas primero.
-    foreach (($def['hijos'] ?? []) as $h) {
+    foreach (((isset($def['hijos']) ? $def['hijos'] : [])) as $h) {
         try { db_exec("DELETE FROM [{$h['tabla']}] WHERE [{$h['fk']}] = $id;"); } catch (Exception $e) {}
     }
     try {

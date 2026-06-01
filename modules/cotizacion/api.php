@@ -10,7 +10,7 @@ require_once __DIR__ . '/../../includes/helpers.php';
 require_once __DIR__ . '/../../includes/auth.php';
 auth_require_login();
 
-$action = $_GET['action'] ?? '';
+$action = (isset($_GET['action']) ? $_GET['action'] : '');
 try {
     switch ($action) {
         case 'list': listar(); break;
@@ -32,7 +32,7 @@ function listar() {
 }
 
 function ficha() {
-    $id = intval($_GET['id'] ?? 0);
+    $id = intval((isset($_GET['id']) ? $_GET['id'] : 0));
     $h = db_row("SELECT P.NUMPPP, P.FEXPPP, P.NUMPTP, P.TOTPPP, P.OBSPPP, C.DENCLI, Pre.DENPRE
                  FROM (([Tbl Presupuestos PTP] AS P
                    LEFT JOIN [Tbl Clientes] AS C ON P.CODCLI=C.CODCLI)

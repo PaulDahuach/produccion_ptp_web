@@ -14,7 +14,7 @@ require_once __DIR__ . '/../../includes/helpers.php';
 require_once __DIR__ . '/../../includes/auth.php';
 auth_require_login();
 
-$action = $_GET['action'] ?? $_POST['action'] ?? '';
+$action = (isset($_GET['action']) ? $_GET['action'] : (isset($_POST['action']) ? $_POST['action'] : ''));
 try {
     switch ($action) {
         case 'init':           initData(); break;
@@ -47,7 +47,7 @@ function initData() {
 }
 
 function marcasCliente() {
-    $cli = intval($_GET['cli'] ?? 0);
+    $cli = intval((isset($_GET['cli']) ? $_GET['cli'] : 0));
     ok(db_query("SELECT M.CODMAR AS id, M.DENMAR AS den
                  FROM [Tbl Clientes Marcas] AS CM INNER JOIN [Tbl Marcas] AS M ON CM.CODMAR = M.CODMAR
                  WHERE CM.CODCLI = $cli ORDER BY M.DENMAR;"));
@@ -55,7 +55,7 @@ function marcasCliente() {
 
 function listar() {
     $w = ['(P.DISPTP = False OR P.DISPTP Is Null)'];
-    $q = trim($_GET['q'] ?? '');
+    $q = trim((isset($_GET['q']) ? $_GET['q'] : ''));
     if ($q !== '') {
         $e = db_esc($q);
         $w[] = "((P.NUMPTP LIKE '%$e%') OR (C.DENCLI LIKE '%$e%') OR (M.DENMAR LIKE '%$e%') OR (P.DENPTP LIKE '%$e%'))";
@@ -71,7 +71,7 @@ function listar() {
 }
 
 function obtener() {
-    $id = intval($_GET['id'] ?? 0);
+    $id = intval((isset($_GET['id']) ? $_GET['id'] : 0));
     $h = db_row("SELECT NUMPTP, FDEPTP, DENPTP, OBSPTP, CODCLI, CODMAR, CODEDP, DISPTP FROM [Tbl PTP] WHERE NUMPTP = $id;");
     if (!$h) { fail('PTP no encontrado'); return; }
     $h['FDEPTP'] = to_disp_date($h['FDEPTP']);
@@ -85,15 +85,15 @@ function obtener() {
 
 function guardar() {
     if (db_readonly()) { fail('Sistema en modo solo lectura'); return; }
-    $id   = intval($_POST['NUMPTP'] ?? 0);   // 0 = alta
-    $cli  = intval($_POST['CODCLI'] ?? 0);
-    $mar  = intval($_POST['CODMAR'] ?? 0);
-    $fec  = trim($_POST['FDEPTP'] ?? '');
-    $den  = trim($_POST['DENPTP'] ?? '');
-    $obs  = trim($_POST['OBSPTP'] ?? '');
-    $procs = json_decode($_POST['__procesos'] ?? '[]', true);
+    $id   = intval((isset($_POST['NUMPTP']) ? $_POST['NUMPTP'] : 0));   // 0 = alta
+    $cli  = intval((isset($_POST['CODCLI']) ? $_POST['CODCLI'] : 0));
+    $mar  = intval((isset($_POST['CODMAR']) ? $_POST['CODMAR'] : 0));
+    $fec  = trim((isset($_POST['FDEPTP']) ? $_POST['FDEPTP'] : ''));
+    $den  = trim((isset($_POST['DENPTP']) ? $_POST['DENPTP'] : ''));
+    $obs  = trim((isset($_POST['OBSPTP']) ? $_POST['OBSPTP'] : ''));
+    $procs = json_decode((isset($_POST['__procesos']) ? $_POST['__procesos'] : '[]'), true);
     if (!is_array($procs)) $procs = [];
-    $procs = array_values(array_filter($procs, function ($p) { return intval($p['CODPRC'] ?? 0) > 0; }));
+    $procs = array_values(array_filter($procs, function ($p) { return intval((isset($p['CODPRC']) ? $p['CODPRC'] : 0)) > 0; }));
 
     if ($cli <= 0) { fail('Elegí un cliente'); return; }
     if ($mar <= 0) { fail('Elegí una marca'); return; }
@@ -116,7 +116,7 @@ function guardar() {
             $ord++;
             $cols = ['NUMPTP', 'ORDPTP', 'CODPRC', 'CODCDP', 'PORPTP', 'OBSPTP'];
             $vals = [(string) $id, (string) $ord, (string) intval($p['CODPRC']),
-                     sqlInt($p['CODCDP'] ?? ''), sqlDec($p['PORPTP'] ?? ''), sqlTxt($p['OBSPTP'] ?? '')];
+                     sqlInt((isset($p['CODCDP']) ? $p['CODCDP'] : '')), sqlDec((isset($p['PORPTP']) ? $p['PORPTP'] : '')), sqlTxt((isset($p['OBSPTP']) ? $p['OBSPTP'] : ''))];
             db_exec("INSERT INTO [Tbl PTP Procesos] ([" . implode('],[', $cols) . "]) VALUES (" . implode(',', $vals) . ");");
         }
         db_commit();
@@ -130,7 +130,7 @@ function guardar() {
 
 function discontinuar() {
     if (db_readonly()) { fail('Sistema en modo solo lectura'); return; }
-    $id = intval($_POST['__id'] ?? 0);
+    $id = intval((isset($_POST['__id']) ? $_POST['__id'] : 0));
     if ($id <= 0) { fail('Falta el PTP'); return; }
     db_exec("UPDATE [Tbl PTP] SET DISPTP=True WHERE NUMPTP=$id;");
     ok(['numptp' => $id]);

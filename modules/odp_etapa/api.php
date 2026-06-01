@@ -9,7 +9,7 @@ require_once __DIR__ . '/../../includes/helpers.php';
 require_once __DIR__ . '/../../includes/auth.php';
 auth_require_login();
 
-$action = $_GET['action'] ?? $_POST['action'] ?? '';
+$action = (isset($_GET['action']) ? $_GET['action'] : (isset($_POST['action']) ? $_POST['action'] : ''));
 try {
     switch ($action) {
         case 'list':    listar(); break;
@@ -24,13 +24,13 @@ try {
 /** Construye las condiciones WHERE comunes a partir del querystring. */
 function filtros(&$where) {
     $where = ['(O.CODETA > 0)'];
-    $etapa = trim($_GET['etapa'] ?? '');
+    $etapa = trim((isset($_GET['etapa']) ? $_GET['etapa'] : ''));
     if ($etapa !== '') $where[] = '(O.CODETA = ' . intval($etapa) . ')';
-    $desde = trim($_GET['desde'] ?? '');
-    $hasta = trim($_GET['hasta'] ?? '');
+    $desde = trim((isset($_GET['desde']) ? $_GET['desde'] : ''));
+    $hasta = trim((isset($_GET['hasta']) ? $_GET['hasta'] : ''));
     if ($desde !== '') $where[] = "(O.FDRODP >= #" . db_esc(fecha_access($desde)) . "#)";
     if ($hasta !== '') $where[] = "(O.FDRODP <= #" . db_esc(fecha_access($hasta)) . "#)";
-    $q = trim($_GET['q'] ?? '');
+    $q = trim((isset($_GET['q']) ? $_GET['q'] : ''));
     if ($q !== '') {
         $e = db_esc($q);
         $where[] = "((O.NUMODP LIKE '%$e%') OR (O.OCNODP LIKE '%$e%') OR (O.CAXODP LIKE '%$e%')"

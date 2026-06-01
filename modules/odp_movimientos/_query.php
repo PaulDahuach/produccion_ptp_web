@@ -24,10 +24,10 @@ function _mov_serial($ddmmaaaa) {
 }
 
 function movimientos_rows() {
-    $desde = _mov_serial($_GET['desde'] ?? '');
-    $hasta = _mov_serial($_GET['hasta'] ?? '');
-    $sector = trim($_GET['sector'] ?? '');   // CODETA (sector producción) opcional
-    $nivel = strtolower(trim($_GET['nivel'] ?? 'detalle'));
+    $desde = _mov_serial((isset($_GET['desde']) ? $_GET['desde'] : ''));
+    $hasta = _mov_serial((isset($_GET['hasta']) ? $_GET['hasta'] : ''));
+    $sector = trim((isset($_GET['sector']) ? $_GET['sector'] : ''));   // CODETA (sector producción) opcional
+    $nivel = strtolower(trim((isset($_GET['nivel']) ? $_GET['nivel'] : 'detalle')));
 
     $fIng = ['(L.FFPODP Is Not Null)'];
     $fEgr = ['(L.FFPODP Is Not Null)'];
@@ -81,7 +81,7 @@ function movimientos_rows() {
     $campo = $nivel === 'personal' ? 'SECTORP' : ($nivel === 'planta' ? 'PLANTA' : 'SECTOR');
     $g = [];
     foreach ($rows as $r) {
-        $k = (string)($r[$campo] ?? '');
+        $k = (string)((isset($r[$campo]) ? $r[$campo] : ''));
         if (!isset($g[$k])) $g[$k] = ['GRUPO' => $k !== '' ? $k : '(sin asignar)', 'ING' => 0, 'EGR' => 0, 'MOVS' => 0];
         $g[$k]['ING']  += (float)$r['INGMOV'];
         $g[$k]['EGR']  += (float)$r['EGRMOV'];
@@ -97,5 +97,5 @@ function _mov_hora($v) {
     if (!is_numeric($v)) return (string)$v;
     $frac = (float)$v - floor((float)$v);
     $mins = (int) round($frac * 24 * 60);
-    return sprintf('%02d:%02d', intdiv($mins, 60) % 24, $mins % 60);
+    return sprintf('%02d:%02d', ((int) ($mins / 60)) % 24, $mins % 60);
 }

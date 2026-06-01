@@ -18,7 +18,7 @@ require_once __DIR__ . '/../../includes/helpers.php';
 require_once __DIR__ . '/../../includes/auth.php';
 auth_require_login();
 
-$action = $_GET['action'] ?? $_POST['action'] ?? '';
+$action = (isset($_GET['action']) ? $_GET['action'] : (isset($_POST['action']) ? $_POST['action'] : ''));
 try {
     switch ($action) {
         case 'init':     init();    break;
@@ -37,25 +37,25 @@ try {
 function filtros_where() {
     $w = ['(L.DSPODP > 0)', '(O.CODETA > 0)', '(O.CODETA <> 120)'];
     // Período (obligatorio en el legacy; por defecto Rec Control)
-    $desde = trim($_GET['desde'] ?? '');
-    $hasta = trim($_GET['hasta'] ?? '');
+    $desde = trim((isset($_GET['desde']) ? $_GET['desde'] : ''));
+    $hasta = trim((isset($_GET['hasta']) ? $_GET['hasta'] : ''));
     if ($desde !== '') $w[] = "(O.FDRODP >= #" . db_esc(fecha_access($desde)) . "#)";
     if ($hasta !== '') $w[] = "(O.FDRODP <= #" . db_esc(fecha_access($hasta)) . "#)";
     // Filtros exactos del legacy
-    $odp = trim($_GET['odp'] ?? '');
+    $odp = trim((isset($_GET['odp']) ? $_GET['odp'] : ''));
     if ($odp !== '') $w[] = '(O.NUMODP = ' . intval($odp) . ')';
-    $oc = trim($_GET['ocorte'] ?? '');
+    $oc = trim((isset($_GET['ocorte']) ? $_GET['ocorte'] : ''));
     if ($oc !== '') $w[] = "(O.OCNODP = '" . db_esc($oc) . "')";
-    $cli = trim($_GET['cli'] ?? '');
+    $cli = trim((isset($_GET['cli']) ? $_GET['cli'] : ''));
     if ($cli !== '') $w[] = '(O.CODCLI = ' . intval($cli) . ')';
-    $mar = trim($_GET['mar'] ?? '');
+    $mar = trim((isset($_GET['mar']) ? $_GET['mar'] : ''));
     if ($mar !== '') $w[] = '(O.CODMAR = ' . intval($mar) . ')';
-    $pre = trim($_GET['pre'] ?? '');
+    $pre = trim((isset($_GET['pre']) ? $_GET['pre'] : ''));
     if ($pre !== '') $w[] = '(O.CODPR1 = ' . intval($pre) . ')';
-    $art = trim($_GET['art'] ?? '');
+    $art = trim((isset($_GET['art']) ? $_GET['art'] : ''));
     if ($art !== '') $w[] = "(O.CAXODP = '" . db_esc($art) . "')";
     // "Órdenes que incluyan el proceso" (cboCodPrc2 → EXISTS)
-    $prc = trim($_GET['prc'] ?? '');
+    $prc = trim((isset($_GET['prc']) ? $_GET['prc'] : ''));
     if ($prc !== '') {
         $w[] = "(EXISTS (SELECT 1 FROM [Tbl Ordenes De Proceso Procesos] AS OPPf "
              . "WHERE OPPf.NUMODP = O.NUMODP AND OPPf.CODPRC = " . intval($prc) . "))";
@@ -117,7 +117,7 @@ function resumen() {
 
 /** Detalle de lotes de un sector (rutRequeryDetalle + tmpDetalle). */
 function detalle() {
-    $sector = trim($_GET['sector'] ?? '');
+    $sector = trim((isset($_GET['sector']) ? $_GET['sector'] : ''));
     if ($sector === '') { ok([]); return; }
     $where = implode(' AND ', filtros_where());
     // CODETA=30 se muestra como PROGRAMACION → el sector pedido puede venir así.
@@ -161,7 +161,7 @@ function detalle() {
 
 /** Procesos de una orden (drill-down cmdPrc → Frm ..._Procesos). */
 function procesos() {
-    $odp = intval($_GET['odp'] ?? 0);
+    $odp = intval((isset($_GET['odp']) ? $_GET['odp'] : 0));
     if ($odp <= 0) { fail('Falta la orden'); return; }
     $rows = db_query("SELECT OPP.ORDODP AS ORDEN, Prc.DENPRC AS PROCESO, E.DENETA AS SECTOR,
                         OPP.CANODP AS CANTIDAD, OPP.DSPODP AS PENDIENTE, OPP.OBSODP AS OBS

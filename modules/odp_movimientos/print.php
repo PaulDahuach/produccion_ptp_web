@@ -11,7 +11,7 @@ $nivel = $res['nivel'];
 $rows = $res['rows'];
 $isDet = ($nivel === 'detalle');
 $empresa = sys('tagline', sys('name'));
-$desde = trim($_GET['desde'] ?? ''); $hasta = trim($_GET['hasta'] ?? '');
+$desde = trim((isset($_GET['desde']) ? $_GET['desde'] : '')); $hasta = trim((isset($_GET['hasta']) ? $_GET['hasta'] : ''));
 $gl = $nivel === 'personal' ? 'Sector Personal' : ($nivel === 'planta' ? 'Planta' : 'Sector Producción');
 $totIng = 0; $totEgr = 0;
 foreach ($rows as $r) { $totIng += (float)($isDet ? $r['INGMOV'] : $r['ING']); $totEgr += (float)($isDet ? $r['EGRMOV'] : $r['EGR']); }

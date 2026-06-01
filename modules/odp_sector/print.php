@@ -9,13 +9,13 @@ require_once __DIR__ . '/../../includes/helpers.php';
 require_once __DIR__ . '/../../includes/auth.php';
 auth_require_login();
 
-$etapa = trim($_GET['etapa'] ?? '');
-$q     = trim($_GET['q'] ?? '');
+$etapa = trim((isset($_GET['etapa']) ? $_GET['etapa'] : ''));
+$q     = trim((isset($_GET['q']) ? $_GET['q'] : ''));
 $rows = [];
 $nomSector = '';
 if ($etapa !== '') {
     $rowSec = db_row("SELECT DENETA FROM [Tbl Etapas] WHERE CODETA = " . intval($etapa) . ";");
-    $nomSector = $rowSec['DENETA'] ?? '';
+    $nomSector = (isset($rowSec['DENETA']) ? $rowSec['DENETA'] : '');
     $where = ['(O.CODETA = ' . intval($etapa) . ')'];
     if ($q !== '') {
         $e = db_esc($q);

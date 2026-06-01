@@ -10,7 +10,7 @@ require_once __DIR__ . '/../../includes/helpers.php';
 require_once __DIR__ . '/../../includes/auth.php';
 auth_require_login();
 
-$action = $_GET['action'] ?? '';
+$action = (isset($_GET['action']) ? $_GET['action'] : '');
 try {
     switch ($action) {
         case 'list': listar(); break;
@@ -23,10 +23,10 @@ try {
 
 function listar() {
     $w = [];
-    $estado = trim($_GET['estado'] ?? '');
+    $estado = trim((isset($_GET['estado']) ? $_GET['estado'] : ''));
     if ($estado !== '') $w[] = '(O.CODEDM = ' . intval($estado) . ')';
     else $w[] = '(O.CODEDM NOT IN (3,5))';   // por defecto, ocultar anuladas
-    $q = trim($_GET['q'] ?? '');
+    $q = trim((isset($_GET['q']) ? $_GET['q'] : ''));
     if ($q !== '') {
         $e = db_esc($q);
         $w[] = "((O.NUMODM LIKE '%$e%') OR (C.DENCLI LIKE '%$e%') OR (M.DENMAR LIKE '%$e%') OR (O.NUMPTP LIKE '%$e%'))";
@@ -45,7 +45,7 @@ function listar() {
 }
 
 function ficha() {
-    $id = intval($_GET['id'] ?? 0);
+    $id = intval((isset($_GET['id']) ? $_GET['id'] : 0));
     $h = db_row("SELECT O.NUMODM, O.FDEODM, O.CANODM, O.NUMPTP, O.OBSODM, Ed.DENEDM,
                    C.DENCLI, M.DENMAR, Pre.DENPRE, Tl.DENTEL
                  FROM ((((([Tbl Ordenes De Muestra] AS O

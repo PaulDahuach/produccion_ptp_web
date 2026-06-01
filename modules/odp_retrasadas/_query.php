@@ -1,17 +1,17 @@
 <?php
 /** Query compartida de Retrasadas (api/print/export). Devuelve las filas según $_GET. */
 function retrasadas_rows() {
-    $dias = intval($_GET['dias'] ?? 0);
+    $dias = intval((isset($_GET['dias']) ? $_GET['dias'] : 0));
     $w = ['(O.CODETA > 0)', '(O.CODETA < 120)', "(DateDiff('d', O.FDDODP, Date()) > $dias)"];
-    $desde = trim($_GET['desde'] ?? ''); $hasta = trim($_GET['hasta'] ?? '');
+    $desde = trim((isset($_GET['desde']) ? $_GET['desde'] : '')); $hasta = trim((isset($_GET['hasta']) ? $_GET['hasta'] : ''));
     if ($desde !== '') $w[] = "(O.FDDODP >= #" . db_esc(fecha_access($desde)) . "#)";
     if ($hasta !== '') $w[] = "(O.FDDODP <= #" . db_esc(fecha_access($hasta)) . "#)";
-    $odp = trim($_GET['odp'] ?? ''); if ($odp !== '') $w[] = '(O.NUMODP = ' . intval($odp) . ')';
-    $oc = trim($_GET['ocorte'] ?? ''); if ($oc !== '') $w[] = "(O.OCNODP = '" . db_esc($oc) . "')";
-    $art = trim($_GET['art'] ?? ''); if ($art !== '') $w[] = "(O.CAXODP = '" . db_esc($art) . "')";
-    $cli = trim($_GET['cli'] ?? ''); if ($cli !== '') $w[] = '(O.CODCLI = ' . intval($cli) . ')';
-    $mar = trim($_GET['mar'] ?? ''); if ($mar !== '') $w[] = '(O.CODMAR = ' . intval($mar) . ')';
-    $pre = trim($_GET['pre'] ?? ''); if ($pre !== '') $w[] = '(O.CODPR1 = ' . intval($pre) . ')';
+    $odp = trim((isset($_GET['odp']) ? $_GET['odp'] : '')); if ($odp !== '') $w[] = '(O.NUMODP = ' . intval($odp) . ')';
+    $oc = trim((isset($_GET['ocorte']) ? $_GET['ocorte'] : '')); if ($oc !== '') $w[] = "(O.OCNODP = '" . db_esc($oc) . "')";
+    $art = trim((isset($_GET['art']) ? $_GET['art'] : '')); if ($art !== '') $w[] = "(O.CAXODP = '" . db_esc($art) . "')";
+    $cli = trim((isset($_GET['cli']) ? $_GET['cli'] : '')); if ($cli !== '') $w[] = '(O.CODCLI = ' . intval($cli) . ')';
+    $mar = trim((isset($_GET['mar']) ? $_GET['mar'] : '')); if ($mar !== '') $w[] = '(O.CODMAR = ' . intval($mar) . ')';
+    $pre = trim((isset($_GET['pre']) ? $_GET['pre'] : '')); if ($pre !== '') $w[] = '(O.CODPR1 = ' . intval($pre) . ')';
     $where = implode(' AND ', $w);
     return db_query("SELECT DateDiff('d', O.FDDODP, Date()) AS DIAS_DEF,
               DateDiff('d', O.FDRODP, Date()) AS DIAS_REC,

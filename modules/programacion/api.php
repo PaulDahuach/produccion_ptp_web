@@ -13,7 +13,7 @@ require_once __DIR__ . '/../../includes/helpers.php';
 require_once __DIR__ . '/../../includes/auth.php';
 auth_require_login();
 
-$action = $_GET['action'] ?? $_POST['action'] ?? '';
+$action = (isset($_GET['action']) ? $_GET['action'] : (isset($_POST['action']) ? $_POST['action'] : ''));
 try {
     switch ($action) {
         case 'list':     listar(); break;
@@ -44,7 +44,7 @@ function listar() {
 /** Libera la orden a producción (marca WPXODP + despacho). */
 function programar() {
     if (db_readonly()) { fail('Sistema en modo solo-lectura', 403); return; }
-    $id = intval($_POST['__id'] ?? 0);
+    $id = intval((isset($_POST['__id']) ? $_POST['__id'] : 0));
     if ($id <= 0) { fail('Falta la orden'); return; }
 
     $o = db_row("SELECT CODETA, CODDST, CANODP FROM [Tbl Ordenes De Proceso] WHERE NUMODP = $id;");
@@ -57,7 +57,7 @@ function programar() {
     $oep = db_row("SELECT CODPRC FROM [Tbl Ordenes En Proceso] WHERE NUMODP = $id AND ORDPTP = 1;");
     if (!$oep) { fail('La orden no tiene procesos definidos'); return; }
     $prc = db_row("SELECT CODETA FROM [Tbl Procesos] WHERE CODPRC = " . intval($oep['CODPRC']) . ";");
-    $sectorDst = intval($prc['CODETA'] ?? 0);
+    $sectorDst = intval((isset($prc['CODETA']) ? $prc['CODETA'] : 0));
 
     $rc = db_row("SELECT FECAPE FROM [Rec Control];");
     $iso = to_iso_date($rc['FECAPE']);

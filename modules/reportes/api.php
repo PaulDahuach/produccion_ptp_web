@@ -6,8 +6,8 @@ require_once __DIR__ . '/../../includes/auth.php';
 auth_require_login();
 
 $DEFS = require __DIR__ . '/defs.php';
-$action = $_GET['action'] ?? '';
-$r = $_GET['r'] ?? '';
+$action = (isset($_GET['action']) ? $_GET['action'] : '');
+$r = (isset($_GET['r']) ? $_GET['r'] : '');
 
 try {
     if ($action === 'list') {

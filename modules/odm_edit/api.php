@@ -17,7 +17,7 @@ require_once __DIR__ . '/../../includes/helpers.php';
 require_once __DIR__ . '/../../includes/auth.php';
 auth_require_login();
 
-$action = $_GET['action'] ?? $_POST['action'] ?? '';
+$action = (isset($_GET['action']) ? $_GET['action'] : (isset($_POST['action']) ? $_POST['action'] : ''));
 try {
     switch ($action) {
         case 'init':           initData(); break;
@@ -54,7 +54,7 @@ function initData() {
 }
 
 function marcasCliente() {
-    $cli = intval($_GET['cli'] ?? 0);
+    $cli = intval((isset($_GET['cli']) ? $_GET['cli'] : 0));
     ok(db_query("SELECT M.CODMAR AS id, M.DENMAR AS den
                  FROM [Tbl Clientes Marcas] AS CM INNER JOIN [Tbl Marcas] AS M ON CM.CODMAR = M.CODMAR
                  WHERE CM.CODCLI = $cli ORDER BY M.DENMAR;"));
@@ -62,7 +62,7 @@ function marcasCliente() {
 
 function listar() {
     $w = ['(O.CODEDM NOT IN (3,5))'];
-    $q = trim($_GET['q'] ?? '');
+    $q = trim((isset($_GET['q']) ? $_GET['q'] : ''));
     if ($q !== '') {
         $e = db_esc($q);
         $w[] = "((O.NUMODM LIKE '%$e%') OR (C.DENCLI LIKE '%$e%') OR (M.DENMAR LIKE '%$e%') OR (O.NUMPTP LIKE '%$e%'))";
@@ -78,7 +78,7 @@ function listar() {
 }
 
 function obtener() {
-    $id = intval($_GET['id'] ?? 0);
+    $id = intval((isset($_GET['id']) ? $_GET['id'] : 0));
     $h = db_row("SELECT O.*, P.DENPTP FROM [Tbl Ordenes De Muestra] AS O
                  LEFT JOIN [Tbl PTP] AS P ON O.NUMPTP = P.NUMPTP WHERE O.NUMODM = $id;");
     if (!$h) { fail('Orden de Muestra no encontrada'); return; }
@@ -98,27 +98,27 @@ function obtener() {
 
 function guardar() {
     if (db_readonly()) { fail('Sistema en modo solo lectura'); return; }
-    $id   = intval($_POST['NUMODM'] ?? 0);   // 0 = alta
-    $cli  = intval($_POST['CODCLI'] ?? 0);
-    $mar  = intval($_POST['CODMAR'] ?? 0);
-    $fec  = trim($_POST['FDEODM'] ?? '');
-    $est  = intval($_POST['CODEDM'] ?? 1);
-    $can  = trim($_POST['CANODM'] ?? '');
-    $ori  = intval($_POST['CODODM'] ?? 1);   // origen
-    $acc  = intval($_POST['CODADP'] ?? 1);   // acción
-    $prop = intval($_POST['CODPDP'] ?? 0);   // propiedad prototipo (opcional)
-    $den  = trim($_POST['DENPTP'] ?? '');
-    $obs  = trim($_POST['OBSODM'] ?? '');
-    $procs = json_decode($_POST['__procesos'] ?? '[]', true); if (!is_array($procs)) $procs = [];
-    $procs = array_values(array_filter($procs, function ($p) { return intval($p['CODPRC'] ?? 0) > 0; }));
-    $prendas = json_decode($_POST['__prendas'] ?? '[]', true); if (!is_array($prendas)) $prendas = [];
-    $prendas = array_values(array_filter($prendas, function ($p) { return intval($p['CODPRE'] ?? 0) > 0; }));
+    $id   = intval((isset($_POST['NUMODM']) ? $_POST['NUMODM'] : 0));   // 0 = alta
+    $cli  = intval((isset($_POST['CODCLI']) ? $_POST['CODCLI'] : 0));
+    $mar  = intval((isset($_POST['CODMAR']) ? $_POST['CODMAR'] : 0));
+    $fec  = trim((isset($_POST['FDEODM']) ? $_POST['FDEODM'] : ''));
+    $est  = intval((isset($_POST['CODEDM']) ? $_POST['CODEDM'] : 1));
+    $can  = trim((isset($_POST['CANODM']) ? $_POST['CANODM'] : ''));
+    $ori  = intval((isset($_POST['CODODM']) ? $_POST['CODODM'] : 1));   // origen
+    $acc  = intval((isset($_POST['CODADP']) ? $_POST['CODADP'] : 1));   // acción
+    $prop = intval((isset($_POST['CODPDP']) ? $_POST['CODPDP'] : 0));   // propiedad prototipo (opcional)
+    $den  = trim((isset($_POST['DENPTP']) ? $_POST['DENPTP'] : ''));
+    $obs  = trim((isset($_POST['OBSODM']) ? $_POST['OBSODM'] : ''));
+    $procs = json_decode((isset($_POST['__procesos']) ? $_POST['__procesos'] : '[]'), true); if (!is_array($procs)) $procs = [];
+    $procs = array_values(array_filter($procs, function ($p) { return intval((isset($p['CODPRC']) ? $p['CODPRC'] : 0)) > 0; }));
+    $prendas = json_decode((isset($_POST['__prendas']) ? $_POST['__prendas'] : '[]'), true); if (!is_array($prendas)) $prendas = [];
+    $prendas = array_values(array_filter($prendas, function ($p) { return intval((isset($p['CODPRE']) ? $p['CODPRE'] : 0)) > 0; }));
 
     if ($cli <= 0) { fail('Elegí un cliente'); return; }
     if ($mar <= 0) { fail('Elegí una marca'); return; }
     if (!$procs)   { fail('Cargá al menos un proceso'); return; }
     $fecSql = '#' . db_esc(fecha_access($fec !== '' ? $fec : date('d/m/Y'))) . '#';
-    $uid = intval($_SESSION['uid'] ?? 0);
+    $uid = intval((isset($_SESSION['uid']) ? $_SESSION['uid'] : 0));
 
     db_begin();
     try {
@@ -135,7 +135,7 @@ function guardar() {
         } else {
             // MODIF: mantiene NUMODM y su NUMPTP
             $ptpRow = db_row("SELECT NUMPTP FROM [Tbl Ordenes De Muestra] WHERE NUMODM=$id;");
-            $ptp = (int) ($ptpRow['NUMPTP'] ?? 0);
+            $ptp = (int) ((isset($ptpRow['NUMPTP']) ? $ptpRow['NUMPTP'] : 0));
             db_exec("UPDATE [Tbl Ordenes De Muestra] SET FDEODM=$fecSql, CODEDM=$est, CODCLI=$cli, CODMAR=$mar,
                        CANODM=" . sqlDec($can) . ", CODODM=$ori, CODADP=$acc, CODPDP=" . ($prop > 0 ? $prop : 'Null') . ",
                        OBSODM=" . sqlTxt($obs) . " WHERE NUMODM=$id;");
@@ -151,9 +151,9 @@ function guardar() {
         $ord = 0;
         foreach ($procs as $p) {
             $ord++;
-            $cp  = sqlInt($p['CODCDP'] ?? '');
-            $por = sqlDec($p['PORODM'] ?? '');
-            $ob  = sqlTxt($p['OBSODM'] ?? '');
+            $cp  = sqlInt((isset($p['CODCDP']) ? $p['CODCDP'] : ''));
+            $por = sqlDec((isset($p['PORODM']) ? $p['PORODM'] : ''));
+            $ob  = sqlTxt((isset($p['OBSODM']) ? $p['OBSODM'] : ''));
             $cpr = (string) intval($p['CODPRC']);
             db_exec("INSERT INTO [Tbl Ordenes De Muestra Procesos] ([NUMODM],[ORDODM],[CODPRC],[CODCDP],[PORODM],[OBSODM])
                      VALUES ($id, $ord, $cpr, $cp, $por, $ob);");
@@ -166,7 +166,7 @@ function guardar() {
         foreach ($prendas as $pr) {
             $ord++;
             db_exec("INSERT INTO [Tbl Ordenes De Muestra Prendas] ([NUMODM],[ORDODM],[CODPRE],[CODTEL])
-                     VALUES ($id, $ord, " . (string) intval($pr['CODPRE']) . ", " . sqlInt($pr['CODTEL'] ?? '') . ");");
+                     VALUES ($id, $ord, " . (string) intval($pr['CODPRE']) . ", " . sqlInt((isset($pr['CODTEL']) ? $pr['CODTEL'] : '')) . ");");
         }
         db_commit();
     } catch (Exception $e) {
@@ -174,12 +174,12 @@ function guardar() {
         fail('No se pudo guardar: ' . $e->getMessage());
         return;
     }
-    ok(['numodm' => $id, 'numptp' => $ptp ?? null, 'procesos' => count($procs), 'prendas' => count($prendas)]);
+    ok(['numodm' => $id, 'numptp' => (isset($ptp) ? $ptp : null), 'procesos' => count($procs), 'prendas' => count($prendas)]);
 }
 
 function anular() {
     if (db_readonly()) { fail('Sistema en modo solo lectura'); return; }
-    $id = intval($_POST['__id'] ?? 0);
+    $id = intval((isset($_POST['__id']) ? $_POST['__id'] : 0));
     if ($id <= 0) { fail('Falta la orden de muestra'); return; }
     db_exec("UPDATE [Tbl Ordenes De Muestra] SET CODEDM=3 WHERE NUMODM=$id;");
     ok(['numodm' => $id]);

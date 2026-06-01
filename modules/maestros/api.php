@@ -32,8 +32,8 @@ $MAESTROS = [
     ],
 ];
 
-$action = $_GET['action'] ?? '';
-$m = $_GET['m'] ?? '';
+$action = (isset($_GET['action']) ? $_GET['action'] : '');
+$m = (isset($_GET['m']) ? $_GET['m'] : '');
 
 try {
     if ($action === 'list') {

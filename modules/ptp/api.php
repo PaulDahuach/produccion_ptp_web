@@ -10,7 +10,7 @@ require_once __DIR__ . '/../../includes/helpers.php';
 require_once __DIR__ . '/../../includes/auth.php';
 auth_require_login();
 
-$action = $_GET['action'] ?? '';
+$action = (isset($_GET['action']) ? $_GET['action'] : '');
 try {
     switch ($action) {
         case 'list': listar(); break;
@@ -23,10 +23,10 @@ try {
 
 function listar() {
     $w = [];
-    $estado = trim($_GET['estado'] ?? '');
+    $estado = trim((isset($_GET['estado']) ? $_GET['estado'] : ''));
     if ($estado !== '') $w[] = '(P.CODEDP = ' . intval($estado) . ')';
     else $w[] = '(P.CODEDP <> 3)';  // por defecto, ocultar anulados
-    $q = trim($_GET['q'] ?? '');
+    $q = trim((isset($_GET['q']) ? $_GET['q'] : ''));
     if ($q !== '') {
         $e = db_esc($q);
         $w[] = "((P.NUMPTP LIKE '%$e%') OR (C.DENCLI LIKE '%$e%') OR (M.DENMAR LIKE '%$e%') OR (P.DENPTP LIKE '%$e%'))";
@@ -45,7 +45,7 @@ function listar() {
 }
 
 function ficha() {
-    $id = intval($_GET['id'] ?? 0);
+    $id = intval((isset($_GET['id']) ? $_GET['id'] : 0));
     $h = db_row("SELECT P.NUMPTP, P.FDEPTP, P.DENPTP, P.OBSPTP, Ed.DENEDP, C.DENCLI, M.DENMAR
                  FROM ((([Tbl PTP] AS P
                    LEFT JOIN [Tbl Estados De PTP] AS Ed ON P.CODEDP = Ed.CODEDP)
