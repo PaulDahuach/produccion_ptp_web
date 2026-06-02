@@ -15,7 +15,7 @@ module_head('Definición de Órdenes', 'bi-diagram-3', $toolbar);
 <link href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css" rel="stylesheet">
 <link href="../abm/assets/css/abm.css" rel="stylesheet">
 
-<div class="fc-form mode-view" id="mainForm">
+<div class="fc-form mode-view" id="mainForm" data-keynav data-keynav-submit="#btnDefinir">
   <!-- Datos de la orden (recepción, solo lectura) -->
   <div class="card fc-card">
     <div class="card-header"><span><i class="bi bi-receipt me-1"></i>Orden recibida

@@ -20,7 +20,7 @@ module_head('Recepción de Órdenes', 'bi-box-arrow-in-down', $toolbar);
 <link href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css" rel="stylesheet">
 <link href="../abm/assets/css/abm.css" rel="stylesheet">
 
-<div class="fc-form mode-view" id="mainForm">
+<div class="fc-form mode-view" id="mainForm" data-keynav data-keynav-submit="#btnGuardar">
   <div class="card fc-card">
     <div class="card-header">
       <span><i class="bi bi-box-arrow-in-down me-1"></i>Datos de la Recepción

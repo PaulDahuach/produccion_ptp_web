@@ -20,7 +20,7 @@ module_head('PTP — Alta / Modificación', 'bi-list-check', $tb);
 <link href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css" rel="stylesheet">
 <link href="../abm/assets/css/abm.css" rel="stylesheet">
 
-<form id="mainForm" class="mode-view" autocomplete="off">
+<form id="mainForm" class="mode-view" autocomplete="off" data-keynav data-keynav-submit="#btnGuardar">
   <div class="card mb-3"><div class="card-body">
     <div class="row g-3">
       <div class="col-md-2"><label class="form-label small">N° PTP</label><div class="fs-5 fw-bold" id="fNum">—</div></div>

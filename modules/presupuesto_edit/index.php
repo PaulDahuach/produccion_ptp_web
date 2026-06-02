@@ -21,7 +21,7 @@ module_head('Presupuestos PTP — Alta / Modificación', 'bi-cash-coin', $tb);
 <link href="../abm/assets/css/abm.css" rel="stylesheet">
 <style>#tblLin input{text-align:right} #tblLin td.calc{text-align:right;font-variant-numeric:tabular-nums}</style>
 
-<form id="mainForm" class="mode-view" autocomplete="off">
+<form id="mainForm" class="mode-view" autocomplete="off" data-keynav data-keynav-submit="#btnGuardar">
   <div class="card mb-3"><div class="card-body">
     <div class="row g-3">
       <div class="col-md-2"><label class="form-label small">N° Presup.</label><div class="fs-5 fw-bold" id="fNum">—</div></div>
