@@ -1,8 +1,9 @@
-/* Recepción de Órdenes — máquina de estados (idle/create/view). */
+/* Recepción de Órdenes — máquina de estados (idle/create/view), paridad con Frm Recepcion. */
 const Rec = {
     DEF: null, mode: 'idle', dt: null, RO: false, currentId: null,
-    CAMPOS: ['FDRODP', 'CODADO', 'REPODP', 'REMODP', 'CODCLI', 'CODMAR', 'CODTAL', 'OCNODP', 'CAXODP',
-        'NUMPTP', 'CODPR1', 'CANODP', 'PESODP', 'CODPR2', 'CODTEL', 'CODCT1', 'CODCT2', 'PREODP', 'PRTODP', 'O10ODP'],
+    // Campos EDITABLES (se cargan/guardan). Los display (d_*) se manejan aparte.
+    CAMPOS: ['CODADO', 'REPODP', 'REMODP', 'CODCLI', 'CODMAR', 'CODTAL', 'OCNODP', 'CAXODP',
+        'CODPR1', 'CANODP', 'PESODP', 'O10ODP', 'PRTODP', 'PREODP', 'CODPR2', 'CODTEL', 'CODCT1', 'CODCT2'],
 
     el(id) { return document.getElementById(id); },
     esc(s) { if (s == null) return ''; const d = document.createElement('div'); d.textContent = String(s); return d.innerHTML; },
@@ -17,8 +18,8 @@ const Rec = {
         this.fillSel('f_CODPR1', j.data.prendas, '— Prenda —');
         this.fillSel('f_CODPR2', j.data.prendas, '—');
         this.fillSel('f_CODTEL', j.data.telas, '—');
-        this.fillSel('f_CODCT1', j.data.colores, '—');
-        this.fillSel('f_CODCT2', j.data.colores, '—');
+        this.fillSel('f_CODCT1', j.data.colores, '—');   // Color de tela
+        this.fillSel('f_CODCT2', j.data.cuerpos, '—');   // Cuerpo de tela
         this.fillSel('f_CODMAR', [], '— elegí cliente —');
         this.bind();
         this.setMode('idle');
@@ -55,8 +56,15 @@ const Rec = {
         this.el('f_REMODP').value = (d.REMODP == null ? '' : d.REMODP);
         this.el('f_CODCLI').value = (d.CODCLI == null ? '' : d.CODCLI);
         await this.onCliente(d.CODMAR);  // carga marcas del cliente y setea la marca
-        ['CODTAL', 'OCNODP', 'CAXODP', 'CODPR1', 'CANODP', 'PESODP', 'PRTODP', 'PREODP', 'NUMPTP', 'CODPR2', 'CODTEL', 'CODCT1', 'CODCT2', 'O10ODP']
+        ['CODTAL', 'OCNODP', 'CAXODP', 'CODPR1', 'CANODP', 'PESODP', 'PRTODP', 'PREODP', 'CODPR2', 'CODTEL', 'CODCT1', 'CODCT2', 'O10ODP']
             .forEach(c => { const el = this.el('f_' + c); if (el) el.value = (d[c] == null ? '' : d[c]); });
+        // PTP se copia del original (display)
+        this.numptp = (d.NUMPTP == null ? '' : d.NUMPTP);
+        this.el('d_NUMPTP').textContent = this.numptp || '—';
+        this.el('d_DENPTP').textContent = d.DENPTP || '—';
+        // Legacy: tras reproceso, la Acción queda fija
+        this.el('f_CODADO').disabled = true;
+        this.el('f_REMODP').focus();
         this.toast('Datos copiados de la orden N° ' + rep, 'info');
     },
 
@@ -101,28 +109,66 @@ const Rec = {
         if (!j.ok) { this.toast(j.error, 'danger'); return; }
         const d = j.data;
         this.currentId = d.NUMODP;
-        this.el('fNum').textContent = d.NUMODP;
         await this.onCliente(d.CODMAR);   // carga marcas del cliente y setea la marca
+        // Editables
         this.CAMPOS.forEach(c => {
             const el = this.el('f_' + c); if (!el || c === 'CODMAR') return;
             if (el.type === 'checkbox') el.checked = !!d[c];
             else el.value = (d[c] === null || d[c] === undefined) ? '' : d[c];
         });
+        // Display
+        this.numptp = (d.NUMPTP == null ? '' : d.NUMPTP);
+        this.el('d_NUMODP').textContent = d.NUMODP;
+        this.el('d_FDRODP').textContent = this.dispDate(d.FDRODP);
+        this.el('d_SECTOR').textContent = d.DENETA || '—';
+        this.el('d_FDEODP').textContent = d.FDEODP_disp || '—';
+        this.el('d_NUMPTP').textContent = this.numptp || '—';
+        this.el('d_DENPTP').textContent = d.DENPTP || '—';
+        this.el('d_NUMPPP').textContent = (d.NUMPPP == null ? '—' : d.NUMPPP);
+        this.el('d_FEXPPP').textContent = d.FEXPPP_disp || '—';
+        this.el('d_O20ODP').value = (d.O20ODP == null ? '' : d.O20ODP);
+        this.el('d_OBSODP').value = (d.OBSODP == null ? '' : d.OBSODP);
+        this.el('d_SPMODP').checked = !!d.SPMODP;
+        this.renderProcesos(d.procesos || []);
         this.setMode('view');
+    },
+
+    renderProcesos(rows) {
+        const tb = this.el('tbProc');
+        this.el('badgeProc').textContent = rows.length;
+        if (!rows.length) {
+            tb.innerHTML = '<tr><td colspan="6" class="text-muted text-center py-2">Sin procesos (se definen en Definición)</td></tr>';
+            return;
+        }
+        tb.innerHTML = rows.map((r, i) =>
+            `<tr><td>${i + 1}</td><td>${this.esc(r.DENPRC)}</td><td>${this.esc(r.SECTOR)}</td>` +
+            `<td>${this.esc(r.COLOR)}</td><td class="text-end">${this.esc(r.PORODP == null ? '' : r.PORODP)}</td>` +
+            `<td>${this.esc(r.OBSODP)}</td></tr>`).join('');
+    },
+
+    dispDate(iso) {
+        if (!iso) return '—';
+        const p = String(iso).split('-');
+        return p.length === 3 ? (p[2] + '/' + p[1] + '/' + p[0]) : iso;
     },
 
     // ---------- acciones ----------
     clear() {
-        this.currentId = null;
-        this.el('fNum').textContent = '—';
+        this.currentId = null; this.numptp = '';
         this.CAMPOS.forEach(c => { const el = this.el('f_' + c); if (!el) return; if (el.type === 'checkbox') el.checked = false; else el.value = ''; });
         this.fillSel('f_CODMAR', [], '— elegí cliente —');
+        this.el('f_CODADO').disabled = false;
+        ['d_NUMODP', 'd_FDRODP', 'd_FDEODP', 'd_NUMPTP', 'd_DENPTP', 'd_NUMPPP', 'd_FEXPPP'].forEach(id => this.el(id).textContent = '—');
+        this.el('d_SECTOR').textContent = '—';
+        this.el('d_O20ODP').value = ''; this.el('d_OBSODP').value = ''; this.el('d_SPMODP').checked = false;
+        this.renderProcesos([]);
         this.el('formErr').textContent = '';
     },
 
     nuevo() {
         this.clear();
-        this.el('f_FDRODP').value = this.DEF.fechaDisp;
+        this.el('d_FDRODP').textContent = this.DEF.fechaDisp;
+        this.el('d_SECTOR').textContent = this.DEF.sectorRecep || 'RECEPCION';
         this.el('f_CODADO').value = '1';
         this.setMode('create');
         this.onAccion();
@@ -135,6 +181,7 @@ const Rec = {
         this.el('formErr').textContent = '';
         const fd = new FormData();
         this.CAMPOS.forEach(c => { const el = this.el('f_' + c); if (!el) return; fd.append(c, el.type === 'checkbox' ? (el.checked ? '1' : '') : el.value); });
+        fd.append('NUMPTP', this.numptp || '');   // PTP sólo si vino por reproceso
         const j = await (await fetch('api.php?action=crear', { method: 'POST', body: fd })).json();
         if (!j.ok) { this.el('formErr').textContent = j.error || 'Error'; this.toast(j.error || 'Error', 'danger'); return; }
         this.toast('Orden N° ' + j.data.numodp + ' registrada', 'success');
@@ -151,7 +198,6 @@ const Rec = {
             this.el('btnAnular').disabled = (mode !== 'view');
         }
         this.el('mainForm').classList.toggle('mode-view', !creating);
-        // "Imprimir" disponible sólo cuando hay una orden cargada en vista
         const imp = this.el('btnImprimir');
         if (imp) {
             const on = (mode === 'view' && this.currentId);

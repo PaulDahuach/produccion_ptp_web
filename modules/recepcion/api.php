@@ -33,16 +33,19 @@ function lk($tabla, $pk, $den, $where = '') {
 /** Combos + fecha de trabajo (FECAPE). */
 function initData() {
     $rc = db_row("SELECT FECAPE FROM [Rec Control];");
+    $sec = db_row("SELECT DENETA FROM [Tbl Etapas] WHERE CODETA = 10;");  // Sector RECEPCION
     ok([
-        'fecha'     => to_iso_date($rc['FECAPE']),
-        'fechaDisp' => to_disp_date($rc['FECAPE']),
-        'acciones'  => lk('Tbl Acciones De ODP', 'CODADO', 'DENADO'),
-        'clientes'  => lk('Tbl Clientes', 'CODCLI', 'DENCLI'),
-        'talleres'  => lk('Tbl Talleres', 'CODTAL', 'DENTAL'),
-        'prendas'   => lk('Tbl Prendas', 'CODPRE', 'DENPRE'),
-        'telas'     => lk('Tbl Telas', 'CODTEL', 'DENTEL'),
-        'colores'   => lk('Tbl Colores Tela', 'CODCT1', 'DENCT1'),
-        'readonly'  => db_readonly(),
+        'fecha'      => to_iso_date($rc['FECAPE']),
+        'fechaDisp'  => to_disp_date($rc['FECAPE']),
+        'sectorRecep'=> ($sec ? $sec['DENETA'] : 'RECEPCION'),
+        'acciones'   => lk('Tbl Acciones De ODP', 'CODADO', 'DENADO'),
+        'clientes'   => lk('Tbl Clientes', 'CODCLI', 'DENCLI'),
+        'talleres'   => lk('Tbl Talleres', 'CODTAL', 'DENTAL'),
+        'prendas'    => lk('Tbl Prendas', 'CODPRE', 'DENPRE'),
+        'telas'      => lk('Tbl Telas', 'CODTEL', 'DENTEL'),
+        'colores'    => lk('Tbl Colores Tela', 'CODCT1', 'DENCT1'),   // CODCT1 = Color de tela
+        'cuerpos'    => lk('Tbl Cuerpos Tela', 'CODCT2', 'DENCT2'),   // CODCT2 = Cuerpo de tela
+        'readonly'   => db_readonly(),
     ]);
 }
 
@@ -92,6 +95,29 @@ function obtener() {
     $row = db_row($sql);
     if (!$row) { fail('Orden no encontrada'); return; }
     $row['FDRODP'] = to_iso_date($row['FDRODP']);
+
+    // Campos display (lookups baratos en vez de un mega-join ACE)
+    $eta = db_row("SELECT DENETA FROM [Tbl Etapas] WHERE CODETA = " . intval($row['CODETA']) . ";");
+    $row['DENETA'] = $eta ? $eta['DENETA'] : '';
+    $row['FDEODP_disp'] = (isset($row['FDEODP']) && $row['FDEODP'] !== '' && $row['FDEODP'] !== null) ? to_disp_date($row['FDEODP']) : '';
+    if (intval((isset($row['NUMPTP']) ? $row['NUMPTP'] : 0)) > 0) {
+        $ptp = db_row("SELECT DENPTP FROM [Tbl PTP] WHERE NUMPTP = " . intval($row['NUMPTP']) . ";");
+        $row['DENPTP'] = $ptp ? $ptp['DENPTP'] : '';
+    } else { $row['DENPTP'] = ''; }
+    if (intval((isset($row['NUMPPP']) ? $row['NUMPPP'] : 0)) > 0) {
+        $pp = db_row("SELECT FEXPPP FROM [Tbl Presupuestos PTP] WHERE NUMPPP = " . intval($row['NUMPPP']) . ";");
+        $row['FEXPPP_disp'] = ($pp && $pp['FEXPPP'] !== null && $pp['FEXPPP'] !== '') ? to_disp_date($pp['FEXPPP']) : '';
+    } else { $row['FEXPPP_disp'] = ''; }
+
+    // Grilla de procesos (subform Frm Recepcion_Procesos: PROCESO·SECTOR·COLOR·%·OBS)
+    $row['procesos'] = db_query(
+        "SELECT OPP.ORDODP, P.DENPRC, E.DENETA AS SECTOR, CP.DENCDP AS COLOR, OPP.PORODP, OPP.OBSODP
+         FROM ((([Tbl Ordenes De Proceso Procesos] AS OPP
+           LEFT JOIN [Tbl Procesos] AS P ON OPP.CODPRC = P.CODPRC)
+           LEFT JOIN [Tbl Etapas] AS E ON P.CODETA = E.CODETA)
+           LEFT JOIN [Tbl Colores De Proceso] AS CP ON OPP.CODCDP = CP.CODCDP)
+         WHERE OPP.NUMODP = $id ORDER BY OPP.ORDODP;"
+    );
     ok($row);
 }
 
