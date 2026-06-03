@@ -68,9 +68,10 @@ function cargarOdm() {
                   LEFT JOIN [Tbl Prendas] AS Pre ON PR.CODPRE=Pre.CODPRE
                   WHERE PR.NUMODM=$numodm AND PR.ORDODM=1;");
     // Líneas = procesos de la muestra + NETPRC del proceso
-    $lineas = db_query("SELECT OMP.ORDODM AS ORD, OMP.CODPRC, P.DENPRC, P.NETPRC, OMP.OBSODM AS OBS
-                        FROM [Tbl Ordenes De Muestra Procesos] AS OMP
-                          INNER JOIN [Tbl Procesos] AS P ON OMP.CODPRC=P.CODPRC
+    $lineas = db_query("SELECT OMP.ORDODM AS ORD, OMP.CODPRC, P.DENPRC, E.DENETA AS SECTOR, P.NETPRC, OMP.OBSODM AS OBS
+                        FROM ([Tbl Ordenes De Muestra Procesos] AS OMP
+                          INNER JOIN [Tbl Procesos] AS P ON OMP.CODPRC=P.CODPRC)
+                          LEFT JOIN [Tbl Etapas] AS E ON P.CODETA=E.CODETA
                         WHERE OMP.NUMODM=$numodm ORDER BY OMP.ORDODM;");
     foreach ($lineas as &$l) { $l['NETPRC'] = r4($l['NETPRC']); }
     ok([
@@ -105,10 +106,11 @@ function obtener() {
                  WHERE P.NUMPPP=$id;");
     if (!$h) { fail('Presupuesto no encontrado'); return; }
     $h['FEXPPP'] = to_disp_date($h['FEXPPP']);
-    $lineas = db_query("SELECT PP.ORDPPP AS ORD, PP.CODPRC, Pr.DENPRC, PP.PDLPPP, PP.SUGPPP, PP.IBPPPP,
+    $lineas = db_query("SELECT PP.ORDPPP AS ORD, PP.CODPRC, Pr.DENPRC, E.DENETA AS SECTOR, PP.PDLPPP, PP.SUGPPP, PP.IBPPPP,
                           PP.PREPPP, PP.PBXPPP, PP.IBXPPP, PP.NETPPP, PP.OBSPPP AS OBS
-                        FROM [Tbl Presupuestos PTP Procesos] AS PP
-                          LEFT JOIN [Tbl Procesos] AS Pr ON PP.CODPRC=Pr.CODPRC
+                        FROM ([Tbl Presupuestos PTP Procesos] AS PP
+                          LEFT JOIN [Tbl Procesos] AS Pr ON PP.CODPRC=Pr.CODPRC)
+                          LEFT JOIN [Tbl Etapas] AS E ON Pr.CODETA=E.CODETA
                         WHERE PP.NUMPPP=$id ORDER BY PP.ORDPPP;");
     ok(['cabecera' => $h, 'lineas' => $lineas]);
 }

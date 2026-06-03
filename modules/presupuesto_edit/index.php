@@ -10,6 +10,7 @@ if (!$ro) $tb .=
     '<button id="btnNuevo" class="btn btn-success btn-sm"><i class="bi bi-plus-lg me-1"></i>Nuevo</button>' .
     '<button id="btnGuardar" class="btn btn-primary btn-sm" disabled><i class="bi bi-check-lg me-1"></i>Guardar</button>' .
     '<button id="btnCancelar" class="btn btn-outline-light btn-sm" disabled><i class="bi bi-x-lg me-1"></i>Cancelar</button>';
+if (!$ro) $tb .= '<button id="btnCopiar" class="btn btn-outline-info btn-sm" disabled title="Traer precios de un presupuesto existente"><i class="bi bi-clipboard-plus me-1"></i>Copiar de…</button>';
 $tb .= '</div><div class="btn-group me-2"><button id="btnBuscar" class="btn btn-outline-light btn-sm"><i class="bi bi-search me-1"></i>Buscar</button>';
 $tb .= '<a id="btnImprimir" class="btn btn-outline-light btn-sm disabled" target="_blank" href="#"><i class="bi bi-printer me-1"></i>Imprimir</a>';
 if (!$ro) $tb .= '<button id="btnAnular" class="btn btn-outline-danger btn-sm" disabled><i class="bi bi-slash-circle me-1"></i>Anular</button>';
@@ -28,8 +29,8 @@ module_head('Presupuestos PTP — Alta / Modificación', 'bi-cash-coin', $tb);
       <div class="col-md-2"><label class="form-label small">Fecha</label><input type="text" id="f_FEXPPP" class="form-control form-control-sm" placeholder="dd/mm/aaaa"></div>
       <div class="col-md-2"><label class="form-label small">Muestra (ODM)</label><div class="fw-medium pt-1" id="fOdm">—</div></div>
       <div class="col-md-2"><label class="form-label small">PTP N°</label><div class="fw-medium pt-1" id="fPtp">—</div></div>
-      <div class="col-md-2"><label class="form-label small">% Pronto Pago</label><input type="number" step="0.01" id="f_PDPPPP" class="form-control form-control-sm" value="0"></div>
-      <div class="col-md-2"><label class="form-label small">% Comercial</label><input type="number" step="0.01" id="f_PDCPPP" class="form-control form-control-sm" value="0"></div>
+      <div class="col-md-2"><label class="form-label small">% Dto.</label><input type="number" step="0.01" id="f_PDPPPP" class="form-control form-control-sm" value="0"></div>
+      <div class="col-md-2"><label class="form-label small">% Dto. Adicional</label><input type="number" step="0.01" id="f_PDCPPP" class="form-control form-control-sm" value="0"></div>
       <div class="col-md-6"><label class="form-label small">Cliente</label><div class="form-control form-control-sm bg-body-secondary" id="fCli">—</div></div>
       <div class="col-md-3"><label class="form-label small">Prenda</label><div class="form-control form-control-sm bg-body-secondary" id="fPre">—</div></div>
       <div class="col-md-3"><label class="form-label small">Observaciones</label><input type="text" id="f_OBSPPP" class="form-control form-control-sm"></div>
@@ -44,23 +45,24 @@ module_head('Presupuestos PTP — Alta / Modificación', 'bi-cash-coin', $tb);
     </div>
     <table class="table table-sm table-bordered align-middle mb-3" id="tblLin">
       <thead><tr>
-        <th style="width:2.5rem">#</th><th>Proceso</th>
+        <th style="width:2.5rem">#</th><th>Proceso</th><th style="width:8rem">Sector</th>
         <th class="text-end" style="width:7rem">P. Lista</th>
         <th class="text-end" style="width:8rem">Sugerido</th>
-        <th class="text-end" style="width:6.5rem">Bonif. PP</th>
-        <th class="text-end" style="width:8rem">Precio</th>
-        <th class="text-end" style="width:6rem">% Bonif.</th>
-        <th class="text-end" style="width:6.5rem">Bonif.</th>
-        <th class="text-end" style="width:8rem">Neto</th>
+        <th class="text-end" style="width:7rem">Dto. x Prenda $</th>
+        <th class="text-end" style="width:8rem">Neto c/Dto $</th>
+        <th class="text-end" style="width:6rem">% Dto. Adic.</th>
+        <th class="text-end" style="width:7rem">Dto. Adic. $</th>
+        <th class="text-end" style="width:8rem">Neto $</th>
       </tr></thead>
       <tbody></tbody>
     </table>
     <div class="row justify-content-end g-2 text-end">
       <div class="col-md-2"><div class="small text-muted">Bruto (ΣSug.)</div><div class="fw-medium" id="tNT0">0,00</div></div>
-      <div class="col-md-2"><div class="small text-muted">Desc. P.Pago</div><div class="fw-medium" id="tIDP">0,00</div></div>
+      <div class="col-md-2"><div class="small text-muted">Dto. x Prenda</div><div class="fw-medium" id="tIDP">0,00</div></div>
       <div class="col-md-2"><div class="small text-muted">Subtotal</div><div class="fw-medium" id="tNT1">0,00</div></div>
-      <div class="col-md-2"><div class="small text-muted">Desc. Comercial</div><div class="fw-medium" id="tIDC">0,00</div></div>
-      <div class="col-md-2"><div class="small text-muted">TOTAL</div><div class="fs-5 fw-bold text-success" id="tTOT">0,00</div></div>
+      <div class="col-md-2"><div class="small text-muted">Dto. Adicional</div><div class="fw-medium" id="tIDC">0,00</div></div>
+      <div class="col-md-2"><div class="small text-muted">Neto Original $</div><div class="fw-medium" id="tORI" title="Total guardado del presupuesto (para comparar con el neto recalculado)">—</div></div>
+      <div class="col-md-2"><div class="small text-muted">P. Unitario Neto $</div><div class="fs-5 fw-bold text-success" id="tTOT">0,00</div></div>
     </div>
   </div></div>
 </form>
@@ -87,6 +89,18 @@ module_head('Presupuestos PTP — Alta / Modificación', 'bi-cash-coin', $tb);
   </div>
 </div></div></div>
 
+<!-- Copiar precios de un presupuesto existente -->
+<div class="modal modal-blur fade" id="modalCopiar" tabindex="-1"><div class="modal-dialog modal-xl modal-dialog-scrollable"><div class="modal-content">
+  <div class="modal-header"><h5 class="modal-title"><i class="bi bi-clipboard-plus me-2"></i>Copiar precios de un presupuesto</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+  <div class="modal-body">
+    <div class="small text-muted mb-2">Trae Sugerido, % Dto. Adicional y Obs. de los procesos que coincidan, más los % del encabezado. No cambia el cliente/prenda/PTP actual.</div>
+    <input type="text" id="cq" class="form-control form-control-sm mb-2" placeholder="N° presup., cliente, PTP...">
+    <table id="grdCopiar" class="table table-sm table-hover w-100" style="cursor:pointer">
+      <thead><tr><th>N° Presup.</th><th>Fecha</th><th>Cliente</th><th>PTP N°</th><th class="text-end">Total</th></tr></thead><tbody></tbody>
+    </table>
+  </div>
+</div></div></div>
+
 <!-- Confirm -->
 <div class="modal modal-blur fade" id="modalConfirm" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content">
   <div class="modal-header"><h5 class="modal-title">Confirmar</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
@@ -100,6 +114,7 @@ module_head('Presupuestos PTP — Alta / Modificación', 'bi-cash-coin', $tb);
   <tr>
     <td class="ord"></td>
     <td class="prc"></td>
+    <td class="sec"></td>
     <td class="calc pdl"></td>
     <td><input type="text" class="form-control form-control-sm c-sug"></td>
     <td class="calc ibp"></td>
@@ -115,5 +130,5 @@ module_foot('
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
-<script src="assets/js/presupuesto_edit.js?v=1"></script>
+<script src="assets/js/presupuesto_edit.js?v=3"></script>
 ');

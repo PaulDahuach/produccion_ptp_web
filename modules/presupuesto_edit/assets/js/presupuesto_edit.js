@@ -24,6 +24,9 @@ const Q = {
             this.el('modalODM').addEventListener('shown.bs.modal', () => this.loadODM());
             this.el('oq').addEventListener('keyup', () => { if (this.dtO) this.dtO.search(this.el('oq').value).draw(); });
             ['f_PDPPPP', 'f_PDCPPP'].forEach(i => this.el(i).addEventListener('input', () => this.recalc()));
+            this.el('btnCopiar').addEventListener('click', () => new bootstrap.Modal(this.el('modalCopiar')).show());
+            this.el('modalCopiar').addEventListener('shown.bs.modal', () => this.loadCopiar());
+            this.el('cq').addEventListener('keyup', () => { if (this.dtC) this.dtC.search(this.el('cq').value).draw(); });
         }
         this.el('btnBuscar').addEventListener('click', () => new bootstrap.Modal(this.el('modalBuscar')).show());
         this.el('modalBuscar').addEventListener('shown.bs.modal', () => this.loadList());
@@ -51,9 +54,42 @@ const Q = {
         this.el('fCli').textContent = d.DENCLI || '—'; this.el('fPre').textContent = d.DENPRE || '—';
         this.el('f_PDPPPP').value = 0; this.el('f_PDCPPP').value = 0; this.el('f_OBSPPP').value = '';
         this.clearRows();
-        (d.lineas || []).forEach(l => this.addRow({ CODPRC: l.CODPRC, DENPRC: l.DENPRC, PDL: l.NETPRC, SUG: l.NETPRC, PBX: '', OBS: l.OBS }));
+        (d.lineas || []).forEach(l => this.addRow({ CODPRC: l.CODPRC, DENPRC: l.DENPRC, SECTOR: l.SECTOR, PDL: l.NETPRC, SUG: l.NETPRC, PBX: '', OBS: l.OBS }));
         this.setMode('create');
         this.recalc();
+    },
+
+    // ---- copiar precios de un presupuesto existente (feature nuevo) ----
+    async loadCopiar() {
+        var j = await (await fetch('api.php?action=list')).json();
+        if (!j.ok) return;
+        var data = (j.data || []).map(r => [r.PPP, r.FEXPPP, r.CLIENTE, r.PTP, this.money(r.TOTAL)]);
+        var self = this;
+        if (this.dtC) this.dtC.clear().rows.add(data).draw();
+        else this.dtC = $('#grdCopiar').DataTable({ data, pageLength: 25, order: [[0, 'desc']], columnDefs: [{ targets: [4], className: 'text-end' }], language: { url: 'https://cdn.datatables.net/plug-ins/1.13.8/i18n/es-AR.json' }, createdRow: (row, d) => row.addEventListener('click', () => { self.copiarDe(d[0]); bootstrap.Modal.getInstance(self.el('modalCopiar')).hide(); }) });
+    },
+    async copiarDe(id) {
+        var j = await (await fetch('api.php?action=get&id=' + encodeURIComponent(id))).json();
+        if (!j.ok) { this.toast(j.error, 'danger'); return; }
+        var c = j.data.cabecera;
+        // % del encabezado
+        this.el('f_PDPPPP').value = (c.PDPPPP == null ? 0 : c.PDPPPP);
+        this.el('f_PDCPPP').value = (c.PDCPPP == null ? 0 : c.PDCPPP);
+        // mapa proceso → precios del presupuesto origen
+        var map = {};
+        (j.data.lineas || []).forEach(l => { map[String(l.CODPRC)] = { SUG: l.SUGPPP, PBX: l.PBXPPP, OBS: l.OBS }; });
+        var ok = 0, miss = 0;
+        this.el('tblLin').querySelectorAll('tbody tr').forEach(tr => {
+            var src = map[String(tr.dataset.codprc)];
+            if (src) {
+                tr.querySelector('.c-sug').value = (src.SUG == null ? '' : src.SUG);
+                tr.querySelector('.c-pbx').value = (src.PBX == null ? '' : src.PBX);
+                if (src.OBS) tr.dataset.obs = src.OBS;
+                ok++;
+            } else { miss++; }
+        });
+        this.recalc();
+        this.toast('Copiado del presupuesto N° ' + id + ' — ' + ok + ' proceso(s) coincidieron' + (miss ? ', ' + miss + ' sin coincidencia (sin cambios)' : ''), ok ? 'success' : 'warning');
     },
 
     // ---- filas ----
@@ -61,6 +97,7 @@ const Q = {
         var tb = this.el('tblLin').querySelector('tbody');
         var tr = this.el('rowLin').content.firstElementChild.cloneNode(true);
         tr.querySelector('.prc').textContent = d.DENPRC || ('#' + d.CODPRC);
+        tr.querySelector('.sec').textContent = d.SECTOR || '';
         tr.dataset.codprc = d.CODPRC;
         tr.dataset.pdl = (d.PDL == null ? '' : d.PDL);
         tr.dataset.obs = d.OBS || '';
@@ -94,6 +131,15 @@ const Q = {
         this.el('tNT1').textContent = this.money(nt1);
         this.el('tIDC').textContent = this.money(idc);
         this.el('tTOT').textContent = this.money(tot);
+        // Neto Original (guardado): resaltar si el recálculo en vivo difiere
+        var ori = this.el('tORI');
+        if (this.origTot == null) { ori.textContent = '—'; ori.classList.remove('text-danger', 'fw-bold'); }
+        else {
+            ori.textContent = this.money(this.origTot);
+            var difiere = Math.abs(Number(this.origTot) - tot) > 0.005;
+            ori.classList.toggle('text-danger', difiere);
+            ori.classList.toggle('fw-bold', difiere);
+        }
     },
 
     collect() {
@@ -117,6 +163,7 @@ const Q = {
         var j = await (await fetch('api.php?action=get&id=' + encodeURIComponent(id))).json();
         if (!j.ok) { this.toast(j.error, 'danger'); return; }
         var c = j.data.cabecera; this.currentId = c.NUMPPP;
+        this.origTot = (c.TOTPPP == null ? null : Number(c.TOTPPP));   // Neto Original guardado
         this.ctx = { NUMODM: c.NUMODM, NUMPTP: c.NUMPTP, CODCLI: c.CODCLI, CODPRE: c.CODPRE };
         this.el('fNum').textContent = c.NUMPPP;
         this.el('f_FEXPPP').value = c.FEXPPP || '';
@@ -125,12 +172,12 @@ const Q = {
         this.el('f_PDPPPP').value = c.PDPPPP || 0; this.el('f_PDCPPP').value = c.PDCPPP || 0;
         this.el('f_OBSPPP').value = c.OBSPPP || '';
         this.clearRows();
-        (j.data.lineas || []).forEach(l => this.addRow({ CODPRC: l.CODPRC, DENPRC: l.DENPRC, PDL: l.PDLPPP, SUG: l.SUGPPP, PBX: l.PBXPPP, OBS: l.OBS }));
+        (j.data.lineas || []).forEach(l => this.addRow({ CODPRC: l.CODPRC, DENPRC: l.DENPRC, SECTOR: l.SECTOR, PDL: l.PDLPPP, SUG: l.SUGPPP, PBX: l.PBXPPP, OBS: l.OBS }));
         this.setMode('view'); this.recalc();
     },
 
     clear() {
-        this.currentId = null; this.ctx = { NUMODM: null, NUMPTP: null, CODCLI: null, CODPRE: null };
+        this.currentId = null; this.origTot = null; this.ctx = { NUMODM: null, NUMPTP: null, CODCLI: null, CODPRE: null };
         this.el('fNum').textContent = '—'; this.el('fOdm').textContent = '—'; this.el('fPtp').textContent = '—';
         this.el('fCli').textContent = '—'; this.el('fPre').textContent = '—';
         ['f_FEXPPP', 'f_OBSPPP'].forEach(i => this.el(i).value = ''); this.el('f_PDPPPP').value = 0; this.el('f_PDCPPP').value = 0;
@@ -173,6 +220,7 @@ const Q = {
             this.el('btnGuardar').disabled = !creating;
             this.el('btnCancelar').disabled = (mode === 'idle');
             this.el('btnAnular').disabled = (mode !== 'view');
+            this.el('btnCopiar').disabled = !creating;   // copiar precios solo al crear/editar
         }
         this.el('mainForm').classList.toggle('mode-view', !creating);
         var imp = this.el('btnImprimir'), on = (mode === 'view' && this.currentId);
