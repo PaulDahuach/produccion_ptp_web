@@ -109,13 +109,13 @@ const Rec = {
         if (!j.ok) { this.toast(j.error, 'danger'); return; }
         const d = j.data;
         this.currentId = d.NUMODP;
-        await this.onCliente(d.CODMAR);   // carga marcas del cliente y setea la marca
         // Editables
         this.CAMPOS.forEach(c => {
             const el = this.el('f_' + c); if (!el || c === 'CODMAR') return;
             if (el.type === 'checkbox') el.checked = !!d[c];
             else el.value = (d[c] === null || d[c] === undefined) ? '' : d[c];
         });
+        await this.onCliente(d.CODMAR);   // tras setear CODCLI: carga marcas y setea la marca
         // Display
         this.numptp = (d.NUMPTP == null ? '' : d.NUMPTP);
         this.el('d_NUMODP').textContent = d.NUMODP;
