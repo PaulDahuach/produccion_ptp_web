@@ -99,10 +99,13 @@ $saludo = $hh < 13 ? 'Buen día' : ($hh < 20 ? 'Buenas tardes' : 'Buenas noches'
 
         <?php if ($menu): ?>
         <div class="menu-panel" id="menuPanel">
-            <?php foreach ($menu as $section => $cards): ?>
+            <?php $isAdmin = auth_is_admin(); foreach ($menu as $section => $cards):
+                $visibles = array();
+                foreach ($cards as $c) { if (empty($c['admin']) || $isAdmin) $visibles[] = $c; }
+                if (!$visibles) continue; ?>
             <section class="mpanel-group">
                 <div class="mpanel-head"><?= h($section) ?></div>
-                <?php foreach ($cards as $c): ?>
+                <?php foreach ($visibles as $c): ?>
                 <a class="mpanel-link" href="<?= h(bu($c['url'])) ?>" data-search="<?= h(mb_strtolower($c['label'] . ' ' . $section . ' ' . (isset($c['desc']) ? $c['desc'] : ''))) ?>">
                     <i class="bi <?= h((isset($c['icon']) ? $c['icon'] : 'bi-dot')) ?>"></i><span><?= h($c['label']) ?></span>
                 </a>

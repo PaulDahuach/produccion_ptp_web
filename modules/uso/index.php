@@ -2,7 +2,7 @@
 /** Estadísticas de uso — adopción del sistema nuevo (por módulo / usuario / máquina / día). */
 require_once __DIR__ . '/../../includes/auth.php';
 require_once __DIR__ . '/../../includes/layout.php';
-auth_require_login();
+auth_require_admin();   // solo administradores (config 'admin_users')
 
 module_head('Estadísticas de Uso', 'bi-graph-up-arrow',
     '<button id="btnReload" class="btn btn-outline-light btn-sm"><i class="bi bi-arrow-clockwise me-1"></i>Refrescar</button>');

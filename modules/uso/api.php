@@ -7,6 +7,7 @@ require_once __DIR__ . '/../../includes/db.php';
 require_once __DIR__ . '/../../includes/helpers.php';
 require_once __DIR__ . '/../../includes/auth.php';
 auth_require_login();
+if (!auth_is_admin()) { fail('Acceso restringido (solo administradores)', 403); exit; }
 
 $action = (isset($_GET['action']) ? $_GET['action'] : '');
 try {
