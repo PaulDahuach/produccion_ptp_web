@@ -23,6 +23,7 @@ try {
         case 'get':            obtener(); break;
         case 'guardar':        guardar(); break;
         case 'discontinuar':   discontinuar(); break;
+        case 'subir_imagen':   subirImagen(); break;
         default: fail('Acción inválida: ' . $action);
     }
 } catch (Exception $e) {
@@ -40,7 +41,9 @@ function initData() {
     ok([
         'readonly' => db_readonly(),
         'clientes' => lk('Tbl Clientes', 'CODCLI', 'DENCLI'),
-        'procesos' => lk('Tbl Procesos', 'CODPRC', 'DENPRC'),
+        'procesos' => db_query("SELECT P.CODPRC AS id, P.DENPRC AS den, E.DENETA AS sector
+                                FROM [Tbl Procesos] AS P LEFT JOIN [Tbl Etapas] AS E ON P.CODETA = E.CODETA
+                                ORDER BY P.DENPRC;"),
         'colores'  => lk('Tbl Colores De Proceso', 'CODCDP', 'DENCDP'),
         'fechaDisp' => date('d/m/Y'),
     ]);
@@ -72,15 +75,20 @@ function listar() {
 
 function obtener() {
     $id = intval((isset($_GET['id']) ? $_GET['id'] : 0));
-    $h = db_row("SELECT NUMPTP, FDEPTP, DENPTP, OBSPTP, CODCLI, CODMAR, CODEDP, DISPTP FROM [Tbl PTP] WHERE NUMPTP = $id;");
+    $h = db_row("SELECT NUMPTP, FDEPTP, DENPTP, OBSPTP, CODCLI, CODMAR, CODEDP, CNFPTP, DISPTP, IM1PTP, IM2PTP FROM [Tbl PTP] WHERE NUMPTP = $id;");
     if (!$h) { fail('PTP no encontrado'); return; }
     $h['FDEPTP'] = to_disp_date($h['FDEPTP']);
-    $procs = db_query("SELECT PP.ORDPTP, PP.CODPRC, Prc.DENPRC, PP.CODCDP, CP.DENCDP, PP.PORPTP, PP.OBSPTP
-                       FROM (([Tbl PTP Procesos] AS PP
+    $procs = db_query("SELECT PP.ORDPTP, PP.CODPRC, Prc.DENPRC, E.DENETA AS SECTOR, PP.CODCDP, CP.DENCDP, PP.PORPTP, PP.OBSPTP
+                       FROM ((([Tbl PTP Procesos] AS PP
                          LEFT JOIN [Tbl Procesos] AS Prc ON PP.CODPRC = Prc.CODPRC)
+                         LEFT JOIN [Tbl Etapas] AS E ON Prc.CODETA = E.CODETA)
                          LEFT JOIN [Tbl Colores De Proceso] AS CP ON PP.CODCDP = CP.CODCDP)
                        WHERE PP.NUMPTP = $id ORDER BY PP.ORDPTP;");
-    ok(['cabecera' => $h, 'procesos' => $procs]);
+    // Órdenes de Muestra ligadas (lstODM)
+    $odms = db_query("SELECT O.NUMODM, A.DENADP AS ACCION
+                      FROM [Tbl Acciones De PTP] AS A INNER JOIN [Tbl Ordenes De Muestra] AS O ON A.CODADP = O.CODADP
+                      WHERE O.NUMPTP = $id ORDER BY O.NUMODM;");
+    ok(['cabecera' => $h, 'procesos' => $procs, 'odms' => $odms]);
 }
 
 function guardar() {
@@ -91,6 +99,9 @@ function guardar() {
     $fec  = trim((isset($_POST['FDEPTP']) ? $_POST['FDEPTP'] : ''));
     $den  = trim((isset($_POST['DENPTP']) ? $_POST['DENPTP'] : ''));
     $obs  = trim((isset($_POST['OBSPTP']) ? $_POST['OBSPTP'] : ''));
+    $cnf  = (!empty($_POST['CNFPTP']) && $_POST['CNFPTP'] !== '0') ? 'True' : 'False';
+    $im1  = sqlTxt((isset($_POST['IM1PTP']) ? $_POST['IM1PTP'] : ''));
+    $im2  = sqlTxt((isset($_POST['IM2PTP']) ? $_POST['IM2PTP'] : ''));
     $procs = json_decode((isset($_POST['__procesos']) ? $_POST['__procesos'] : '[]'), true);
     if (!is_array($procs)) $procs = [];
     $procs = array_values(array_filter($procs, function ($p) { return intval((isset($p['CODPRC']) ? $p['CODPRC'] : 0)) > 0; }));
@@ -104,11 +115,11 @@ function guardar() {
     try {
         if ($id <= 0) {
             $id = next_number('ULTPTP');
-            db_exec("INSERT INTO [Tbl PTP] ([NUMPTP],[FDEPTP],[CODEDP],[DENPTP],[CNFPTP],[DISPTP],[CODCLI],[CODMAR],[OBSPTP])
-                     VALUES ($id, $fecSql, 2, " . sqlTxt($den !== '' ? $den : ('PTP' . $id)) . ", True, False, $cli, $mar, " . sqlTxt($obs) . ");");
+            db_exec("INSERT INTO [Tbl PTP] ([NUMPTP],[FDEPTP],[CODEDP],[DENPTP],[CNFPTP],[DISPTP],[CODCLI],[CODMAR],[OBSPTP],[IM1PTP],[IM2PTP])
+                     VALUES ($id, $fecSql, 2, " . sqlTxt($den !== '' ? $den : ('PTP' . $id)) . ", $cnf, False, $cli, $mar, " . sqlTxt($obs) . ", $im1, $im2);");
         } else {
-            db_exec("UPDATE [Tbl PTP] SET FDEPTP=$fecSql, CODEDP=2, DENPTP=" . sqlTxt($den) . ", CNFPTP=True, DISPTP=False,
-                     CODCLI=$cli, CODMAR=$mar, OBSPTP=" . sqlTxt($obs) . " WHERE NUMPTP=$id;");
+            db_exec("UPDATE [Tbl PTP] SET FDEPTP=$fecSql, CODEDP=2, DENPTP=" . sqlTxt($den) . ", CNFPTP=$cnf, DISPTP=False,
+                     CODCLI=$cli, CODMAR=$mar, OBSPTP=" . sqlTxt($obs) . ", IM1PTP=$im1, IM2PTP=$im2 WHERE NUMPTP=$id;");
             db_exec("DELETE FROM [Tbl PTP Procesos] WHERE NUMPTP=$id;");
         }
         $ord = 0;
@@ -134,4 +145,22 @@ function discontinuar() {
     if ($id <= 0) { fail('Falta el PTP'); return; }
     db_exec("UPDATE [Tbl PTP] SET DISPTP=True WHERE NUMPTP=$id;");
     ok(['numptp' => $id]);
+}
+
+/** Subida de imagen (IMAGEN I / II). Devuelve la ruta web relativa para guardar en IM1PTP/IM2PTP. */
+function subirImagen() {
+    if (db_readonly()) { fail('Sistema en modo solo lectura', 403); return; }
+    if (!isset($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) { fail('Error al subir el archivo'); return; }
+    $f = $_FILES['file'];
+    if ($f['size'] > 8 * 1024 * 1024) { fail('Imagen demasiado grande (máx 8 MB)'); return; }
+    $info = @getimagesize($f['tmp_name']);
+    if (!$info) { fail('El archivo no es una imagen válida'); return; }
+    $extMap = array(IMAGETYPE_JPEG => 'jpg', IMAGETYPE_PNG => 'png', IMAGETYPE_GIF => 'gif');
+    if (!isset($extMap[$info[2]])) { fail('Formato no soportado (usá JPG, PNG o GIF)'); return; }
+    $ext = $extMap[$info[2]];
+    $dir = __DIR__ . '/../../uploads/ptp';
+    if (!is_dir($dir)) @mkdir($dir, 0775, true);
+    $name = 'ptp_' . date('Ymd_His') . '_' . mt_rand(1000, 9999) . '.' . $ext;
+    if (!move_uploaded_file($f['tmp_name'], $dir . '/' . $name)) { fail('No se pudo guardar la imagen'); return; }
+    ok(['path' => 'uploads/ptp/' . $name]);
 }

@@ -1,6 +1,6 @@
 /* PTP — Alta/Modificación: form-first + grilla de procesos (idle/create/edit/view). */
 const P = {
-    DEF: null, mode: 'idle', RO: false, dt: null, currentId: null,
+    DEF: null, mode: 'idle', RO: false, dt: null, currentId: null, sectorMap: {}, base: (window.IWK_BASE || ''),
 
     el(id) { return document.getElementById(id); },
     esc(s) { if (s == null) return ''; var d = document.createElement('div'); d.textContent = String(s); return d.innerHTML; },
@@ -9,6 +9,7 @@ const P = {
         var j = await (await fetch('api.php?action=init')).json();
         if (!j.ok) { this.toast('Error: ' + j.error, 'danger'); return; }
         this.DEF = j.data; this.RO = j.data.readonly;
+        (j.data.procesos || []).forEach(o => { this.sectorMap[o.id] = o.sector || ''; });
         this.fillSel(this.el('f_CODCLI'), j.data.clientes, '— Cliente —');
         this.bind();
         this.setMode('idle');
@@ -26,6 +27,8 @@ const P = {
             this.el('btnCancelar').addEventListener('click', () => this.cancelar());
             this.el('btnEliminar').addEventListener('click', () => this.discontinuar());
             this.el('btnAddProc').addEventListener('click', () => this.addRow());
+            document.querySelectorAll('.img-file').forEach(inp => inp.addEventListener('change', e => this.uploadImg(e.target)));
+            document.querySelectorAll('.img-clear').forEach(btn => btn.addEventListener('click', () => this.setImg(btn.dataset.slot, '')));
         }
         this.el('btnBuscar').addEventListener('click', () => new bootstrap.Modal(this.el('modalBuscar')).show());
         this.el('modalBuscar').addEventListener('shown.bs.modal', () => this.loadList());
@@ -41,14 +44,36 @@ const P = {
         if (keep !== undefined) this.el('f_CODMAR').value = keep;
     },
 
+    // ---- imágenes ----
+    boxId(slot) { return slot === 'IM1PTP' ? 'box_IM1' : 'box_IM2'; },
+    setImg(slot, path) {
+        this.el('f_' + slot).value = path || '';
+        var box = this.el(this.boxId(slot));
+        if (path) box.innerHTML = '<img src="' + this.esc(this.base + '/' + path) + '" alt="">';
+        else box.innerHTML = '<span class="text-muted small">Sin imagen</span>';
+    },
+    async uploadImg(input) {
+        if (!input.files || !input.files[0]) return;
+        var slot = input.dataset.slot;
+        var fd = new FormData(); fd.append('file', input.files[0]);
+        this.el(this.boxId(slot)).innerHTML = '<span class="text-muted small"><span class="spinner-border spinner-border-sm me-1"></span>Subiendo…</span>';
+        var j = await (await fetch('api.php?action=subir_imagen', { method: 'POST', body: fd })).json();
+        input.value = '';
+        if (!j.ok) { this.setImg(slot, this.el('f_' + slot).value); this.toast(j.error || 'No se pudo subir', 'danger'); return; }
+        this.setImg(slot, j.data.path);
+    },
+
     // ---- grilla de procesos ----
     addRow(data) {
-        var tb = this.el('tblProc').querySelector('tbody');
+        var tb = this.el('tbProc');
         var tr = this.el('rowTpl').content.firstElementChild.cloneNode(true);
         this.fillSel(tr.querySelector('.c-prc'), this.DEF.procesos, '— Proceso —');
         this.fillSel(tr.querySelector('.c-cdp'), this.DEF.colores, '—');
+        var prc = tr.querySelector('.c-prc'), sec = tr.querySelector('.c-sec');
+        prc.addEventListener('change', () => { sec.value = this.sectorMap[prc.value] || ''; });
         if (data) {
-            tr.querySelector('.c-prc').value = data.CODPRC || '';
+            prc.value = data.CODPRC || '';
+            sec.value = this.sectorMap[data.CODPRC] || '';
             tr.querySelector('.c-cdp').value = data.CODCDP || '';
             tr.querySelector('.c-por').value = (data.PORPTP == null ? '' : data.PORPTP);
             tr.querySelector('.c-obs').value = data.OBSPTP || '';
@@ -57,16 +82,23 @@ const P = {
         tb.appendChild(tr);
         this.renumber();
     },
-    renumber() { var i = 0; this.el('tblProc').querySelectorAll('tbody tr').forEach(tr => { tr.querySelector('.ord').textContent = ++i; }); },
-    clearRows() { this.el('tblProc').querySelector('tbody').innerHTML = ''; },
+    renumber() { var i = 0; this.el('tbProc').querySelectorAll('tr').forEach(tr => { tr.querySelector('.ord').textContent = ++i; }); this.el('badgeProc').textContent = i; },
+    clearRows() { this.el('tbProc').innerHTML = ''; this.renumber(); },
     collectRows() {
         var out = [];
-        this.el('tblProc').querySelectorAll('tbody tr').forEach(tr => {
+        this.el('tbProc').querySelectorAll('tr').forEach(tr => {
             var prc = tr.querySelector('.c-prc').value;
             if (!prc) return;
             out.push({ CODPRC: prc, CODCDP: tr.querySelector('.c-cdp').value, PORPTP: tr.querySelector('.c-por').value, OBSPTP: tr.querySelector('.c-obs').value });
         });
         return out;
+    },
+
+    renderOdms(rows) {
+        this.el('badgeOdm').textContent = rows.length;
+        var tb = this.el('tbOdm');
+        if (!rows.length) { tb.innerHTML = '<tr><td colspan="2" class="text-muted text-center py-2">—</td></tr>'; return; }
+        tb.innerHTML = rows.map(r => '<tr><td>' + this.esc(r.NUMODM) + '</td><td>' + this.esc(r.ACCION) + '</td></tr>').join('');
     },
 
     // ---- buscar / cargar ----
@@ -92,8 +124,13 @@ const P = {
         this.el('f_FDEPTP').value = c.FDEPTP || '';
         this.el('f_DENPTP').value = c.DENPTP || '';
         this.el('f_OBSPTP').value = c.OBSPTP || '';
+        this.el('f_CNFPTP').checked = !!c.CNFPTP;
+        this.el('d_DISPTP').checked = !!c.DISPTP;
         this.el('f_CODCLI').value = c.CODCLI || '';
         await this.onCliente(c.CODMAR);
+        this.setImg('IM1PTP', c.IM1PTP || '');
+        this.setImg('IM2PTP', c.IM2PTP || '');
+        this.renderOdms(j.data.odms || []);
         this.clearRows();
         (j.data.procesos || []).forEach(p => this.addRow(p));
         this.setMode('view');
@@ -104,7 +141,10 @@ const P = {
         this.currentId = null;
         this.el('fNum').textContent = '—';
         ['f_FDEPTP', 'f_DENPTP', 'f_OBSPTP', 'f_CODCLI'].forEach(i => this.el(i).value = '');
+        this.el('f_CNFPTP').checked = false; this.el('d_DISPTP').checked = false;
+        this.setImg('IM1PTP', ''); this.setImg('IM2PTP', '');
         this.fillSel(this.el('f_CODMAR'), [], '— elegí cliente —');
+        this.renderOdms([]);
         this.clearRows();
         this.el('formErr').textContent = '';
     },
@@ -129,6 +169,9 @@ const P = {
         fd.append('FDEPTP', this.el('f_FDEPTP').value);
         fd.append('DENPTP', this.el('f_DENPTP').value);
         fd.append('OBSPTP', this.el('f_OBSPTP').value);
+        fd.append('CNFPTP', this.el('f_CNFPTP').checked ? '1' : '');
+        fd.append('IM1PTP', this.el('f_IM1PTP').value);
+        fd.append('IM2PTP', this.el('f_IM2PTP').value);
         fd.append('__procesos', JSON.stringify(this.collectRows()));
         var j = await (await fetch('api.php?action=guardar', { method: 'POST', body: fd })).json();
         if (!j.ok) { this.el('formErr').textContent = j.error || 'Error'; this.toast(j.error || 'Error', 'danger'); return; }
@@ -161,7 +204,6 @@ const P = {
         imp.classList.toggle('disabled', !on);
         imp.href = on ? ('../imprimir_ptp/?id=' + encodeURIComponent(this.currentId)) : '#';
         this.el('btnAddProc').style.display = creating ? '' : 'none';
-        // En vista, doble clic en el form para editar
     },
 
     confirm(message) {

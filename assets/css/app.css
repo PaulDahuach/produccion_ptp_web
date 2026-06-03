@@ -102,3 +102,8 @@ a.kpi:hover { transform:translateY(-2px); box-shadow:0 8px 22px -8px var(--c); }
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .iwk-combo-opt.active, .iwk-combo-opt:hover { background:var(--fc-primary); color:#fff; }
 .iwk-combo-empty { padding:.3rem .6rem; color:var(--bs-secondary-color); font-size:.8rem; }
+
+/* Preview de imagen (PTP) */
+.iwk-img-box { height:160px; border:1px dashed var(--bs-border-color); border-radius:.375rem;
+    display:flex; align-items:center; justify-content:center; overflow:hidden; background:var(--bs-body-bg); }
+.iwk-img-box img { max-width:100%; max-height:100%; object-fit:contain; }
