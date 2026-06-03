@@ -100,9 +100,9 @@ const Q = {
         tr.querySelector('.sec').textContent = d.SECTOR || '';
         tr.dataset.codprc = d.CODPRC;
         tr.dataset.pdl = (d.PDL == null ? '' : d.PDL);
-        tr.dataset.obs = d.OBS || '';
         tr.querySelector('.c-sug').value = (d.SUG == null ? '' : d.SUG);
         tr.querySelector('.c-pbx').value = (d.PBX == null ? '' : d.PBX);
+        tr.querySelector('.c-obs').value = (d.OBS == null ? '' : d.OBS);
         tr.querySelector('.c-sug').addEventListener('input', () => this.recalc());
         tr.querySelector('.c-pbx').addEventListener('input', () => this.recalc());
         tb.appendChild(tr);
@@ -145,7 +145,7 @@ const Q = {
     collect() {
         var out = [];
         this.el('tblLin').querySelectorAll('tbody tr').forEach(tr => {
-            out.push({ CODPRC: tr.dataset.codprc, PDL: tr.dataset.pdl, SUG: tr.querySelector('.c-sug').value, PBX: tr.querySelector('.c-pbx').value, OBS: tr.dataset.obs });
+            out.push({ CODPRC: tr.dataset.codprc, PDL: tr.dataset.pdl, SUG: tr.querySelector('.c-sug').value, PBX: tr.querySelector('.c-pbx').value, OBS: tr.querySelector('.c-obs').value });
         });
         return out;
     },
