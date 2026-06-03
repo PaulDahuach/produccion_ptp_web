@@ -14,11 +14,13 @@ auth_require_login();
 $action = (isset($_GET['action']) ? $_GET['action'] : (isset($_POST['action']) ? $_POST['action'] : ''));
 try {
     switch ($action) {
-        case 'init':          initData(); break;
-        case 'list':          listar(); break;
-        case 'get':           obtener(); break;
-        case 'ptp_procesos':  ptpProcesos(); break;
-        case 'definir':       definir(); break;
+        case 'init':           initData(); break;
+        case 'marcas_cliente': marcasCliente(); break;
+        case 'tela_colores':   telaColores(); break;
+        case 'list':           listar(); break;
+        case 'get':            obtener(); break;
+        case 'ptp_procesos':   ptpProcesos(); break;
+        case 'definir':        definir(); break;
         default: fail('Acción inválida: ' . $action);
     }
 } catch (Exception $e) {
@@ -32,12 +34,39 @@ function lk($tabla, $pk, $den) {
 function initData() {
     $rc = db_row("SELECT FECAPE FROM [Rec Control];");
     ok([
-        'fecha'    => to_iso_date($rc['FECAPE']),
-        'fechaDisp'=> to_disp_date($rc['FECAPE']),
-        'procesos' => lk('Tbl Procesos', 'CODPRC', 'DENPRC'),
-        'colores'  => lk('Tbl Colores De Proceso', 'CODCDP', 'DENCDP'),
-        'readonly' => db_readonly(),
+        'fecha'      => to_iso_date($rc['FECAPE']),
+        'fechaDisp'  => to_disp_date($rc['FECAPE']),
+        // Cabecera (editable en Definición, como en Access)
+        'acciones'   => lk('Tbl Acciones De ODP', 'CODADO', 'DENADO'),
+        'destinos'   => lk('Tbl Destinos', 'CODDST', 'DENDST'),
+        'clientes'   => lk('Tbl Clientes', 'CODCLI', 'DENCLI'),
+        'talleres'   => lk('Tbl Talleres', 'CODTAL', 'DENTAL'),
+        'prendas'    => lk('Tbl Prendas', 'CODPRE', 'DENPRE'),
+        'telas'      => lk('Tbl Telas', 'CODTEL', 'DENTEL'),
+        'colores'    => lk('Tbl Colores Tela', 'CODCT1', 'DENCT1'),   // Color de tela
+        'cuerpos'    => lk('Tbl Cuerpos Tela', 'CODCT2', 'DENCT2'),   // Cuerpo de tela
+        // Grilla de procesos
+        'procesos'   => db_query("SELECT P.CODPRC AS id, P.DENPRC AS den, E.DENETA AS sector
+                                  FROM [Tbl Procesos] AS P LEFT JOIN [Tbl Etapas] AS E ON P.CODETA = E.CODETA
+                                  ORDER BY P.DENPRC;"),
+        'coloresProc'=> lk('Tbl Colores De Proceso', 'CODCDP', 'DENCDP'),
+        'readonly'   => db_readonly(),
     ]);
+}
+
+/** Marcas habilitadas para un cliente. */
+function marcasCliente() {
+    $cli = intval((isset($_GET['cli']) ? $_GET['cli'] : 0));
+    ok(db_query("SELECT M.CODMAR AS id, M.DENMAR AS den
+                 FROM [Tbl Clientes Marcas] AS CM INNER JOIN [Tbl Marcas] AS M ON CM.CODMAR = M.CODMAR
+                 WHERE CM.CODCLI = $cli ORDER BY M.DENMAR;"));
+}
+
+/** Colores por defecto de una tela (CODTEL_AfterUpdate). */
+function telaColores() {
+    $tel = intval((isset($_GET['tel']) ? $_GET['tel'] : 0));
+    $r = db_row("SELECT CODCT1, CODCT2 FROM [Tbl Telas] WHERE CODTEL = $tel;");
+    ok($r ?: ['CODCT1' => null, 'CODCT2' => null]);
 }
 
 /** Órdenes pendientes de definición (CODETA=20). */
@@ -54,22 +83,24 @@ function listar() {
     ok($rows);
 }
 
-/** Cabecera de una orden recibida (datos de recepción, para mostrar). */
+/** Orden recibida (datos completos, editables en Definición). */
 function obtener() {
     $id = intval((isset($_GET['id']) ? $_GET['id'] : 0));
-    $sql = "SELECT O.NUMODP, O.CODETA, O.FDRODP, O.CANODP, O.REMODP, O.OCNODP, O.CAXODP, O.NUMPTP,
-              O.O10ODP, O.O20ODP, C.DENCLI, M.DENMAR, T.DENTAL, P1.DENPRE AS DENPR1, Tl.DENTEL
-            FROM ((((([Tbl Ordenes De Proceso] AS O
-              LEFT JOIN [Tbl Clientes] AS C ON O.CODCLI=C.CODCLI)
-              LEFT JOIN [Tbl Marcas] AS M ON O.CODMAR=M.CODMAR)
-              LEFT JOIN [Tbl Talleres] AS T ON O.CODTAL=T.CODTAL)
-              LEFT JOIN [Tbl Prendas] AS P1 ON O.CODPR1=P1.CODPRE)
-              LEFT JOIN [Tbl Telas] AS Tl ON O.CODTEL=Tl.CODTEL)
-            WHERE O.NUMODP = $id;";
-    $row = db_row($sql);
+    $row = db_row("SELECT * FROM [Tbl Ordenes De Proceso] WHERE NUMODP = $id;");
     if (!$row) { fail('Orden no encontrada'); return; }
     if (intval($row['CODETA']) !== 20) { fail('La orden no está pendiente de definición (CODETA=' . $row['CODETA'] . ')'); return; }
-    $row['FDRODP'] = to_disp_date($row['FDRODP']);
+
+    // Nombres display (lookups baratos)
+    $eta = db_row("SELECT DENETA FROM [Tbl Etapas] WHERE CODETA = " . intval($row['CODETA']) . ";");
+    $row['DENETA'] = $eta ? $eta['DENETA'] : '';
+    if (intval((isset($row['NUMPTP']) ? $row['NUMPTP'] : 0)) > 0) {
+        $ptp = db_row("SELECT DENPTP FROM [Tbl PTP] WHERE NUMPTP = " . intval($row['NUMPTP']) . ";");
+        $row['DENPTP'] = $ptp ? $ptp['DENPTP'] : '';
+    } else { $row['DENPTP'] = ''; }
+    if (intval((isset($row['NUMPPP']) ? $row['NUMPPP'] : 0)) > 0) {
+        $pp = db_row("SELECT FEXPPP FROM [Tbl Presupuestos PTP] WHERE NUMPPP = " . intval($row['NUMPPP']) . ";");
+        $row['FEXPPP_disp'] = ($pp && $pp['FEXPPP'] !== null && $pp['FEXPPP'] !== '') ? to_disp_date($pp['FEXPPP']) : '';
+    } else { $row['FEXPPP_disp'] = ''; }
     ok($row);
 }
 
@@ -104,10 +135,18 @@ function definir() {
     $id = intval((isset($_POST['__id']) ? $_POST['__id'] : 0));
     if ($id <= 0) { fail('Falta la orden'); return; }
 
-    $o = db_row("SELECT CODETA, CANODP FROM [Tbl Ordenes De Proceso] WHERE NUMODP = $id;");
+    $o = db_row("SELECT CODETA FROM [Tbl Ordenes De Proceso] WHERE NUMODP = $id;");
     if (!$o) { fail('Orden no encontrada'); return; }
     if (intval($o['CODETA']) !== 20) { fail('La orden no está pendiente de definición'); return; }
-    $cant = intval($o['CANODP']);
+
+    // Cabecera editable (paridad con Frm Definicion): requeridos
+    $req = ['REMODP' => 'Remito', 'CODCLI' => 'Cliente', 'CODMAR' => 'Marca', 'CODTAL' => 'Taller',
+            'CODPR1' => 'Prenda', 'CANODP' => 'Cantidad', 'PESODP' => 'Peso'];
+    foreach ($req as $k => $lbl) {
+        if (trim((string) ((isset($_POST[$k]) ? $_POST[$k] : ''))) === '') { fail("Falta: $lbl"); return; }
+    }
+    $cant = intval($_POST['CANODP']);
+    if ($cant <= 0) { fail('Cantidad inválida'); return; }
 
     $procs = json_decode((isset($_POST['__procesos']) ? $_POST['__procesos'] : '[]'), true);
     if (!is_array($procs)) $procs = [];
@@ -124,13 +163,34 @@ function definir() {
     $bar .= modulo10(str_pad((string) $id, 8, '0', STR_PAD_LEFT));
     $o20 = sqlTxt((isset($_POST['O20ODP']) ? $_POST['O20ODP'] : ''));
     $numptp = sqlInt((isset($_POST['NUMPTP']) ? $_POST['NUMPTP'] : ''));
+    $numppp = sqlInt((isset($_POST['NUMPPP']) ? $_POST['NUMPPP'] : ''));
+
+    // Cabecera editable
+    $codado = intval((isset($_POST['CODADO']) ? $_POST['CODADO'] : 1)) ?: 1;
+    $repodp = ($codado === 1) ? 'Null' : sqlInt((isset($_POST['REPODP']) ? $_POST['REPODP'] : ''));
+    $coddst = sqlInt((isset($_POST['CODDST']) ? $_POST['CODDST'] : ''));  if ($coddst === 'Null') $coddst = '1';
+    $prt    = (!empty($_POST['PRTODP']) && $_POST['PRTODP'] !== '0') ? 'True' : 'False';
+    $remodp = sqlTxt($_POST['REMODP']);
+    $codcli = sqlInt($_POST['CODCLI']);   $codmar = sqlInt($_POST['CODMAR']);   $codtal = sqlInt($_POST['CODTAL']);
+    $ocnodp = sqlTxt((isset($_POST['OCNODP']) ? $_POST['OCNODP'] : ''));
+    $caxodp = sqlTxt((isset($_POST['CAXODP']) ? $_POST['CAXODP'] : ''));
+    $codpr1 = sqlInt($_POST['CODPR1']);   $pesodp = sqlDec($_POST['PESODP']);
+    $preodp = sqlTxt((isset($_POST['PREODP']) ? $_POST['PREODP'] : ''));
+    $codpr2 = sqlInt((isset($_POST['CODPR2']) ? $_POST['CODPR2'] : ''));
+    $codtel = sqlInt((isset($_POST['CODTEL']) ? $_POST['CODTEL'] : ''));
+    $codct1 = sqlInt((isset($_POST['CODCT1']) ? $_POST['CODCT1'] : ''));
+    $codct2 = sqlInt((isset($_POST['CODCT2']) ? $_POST['CODCT2'] : ''));
 
     db_begin();
     try {
-        // 1) Avanzar la cabecera a Definición (CODETA=30)
+        // 1) Avanzar la cabecera a Definición (CODETA=30) — incluye la cabecera editable
         db_exec("UPDATE [Tbl Ordenes De Proceso] SET
                     CODETA=30, FDDODP=$fdd, FUPODP=$fdd, BARODP='" . db_esc($bar) . "', CODCDO=$cdo,
-                    ORDODP=1, DEFODP=0, PRGODP=$cant, O20ODP=$o20, CODDST=1, NUMPTP=$numptp,
+                    ORDODP=1, DEFODP=0, PRGODP=$cant, O20ODP=$o20, CODDST=$coddst,
+                    CODADO=$codado, REPODP=$repodp, REMODP=$remodp, CODCLI=$codcli, CODMAR=$codmar,
+                    CODTAL=$codtal, OCNODP=$ocnodp, CAXODP=$caxodp, CODPR1=$codpr1, CANODP=$cant, PESODP=$pesodp,
+                    PRTODP=$prt, PREODP=$preodp, NUMPTP=$numptp, NUMPPP=$numppp,
+                    CODPR2=$codpr2, CODTEL=$codtel, CODCT1=$codct1, CODCT2=$codct2,
                     NUIODP=$uid, NMIODP=0, NOWODP=Now()
                  WHERE NUMODP=$id;");
 
