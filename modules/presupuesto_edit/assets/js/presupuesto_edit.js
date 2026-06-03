@@ -102,7 +102,8 @@ const Q = {
         tr.dataset.pdl = (d.PDL == null ? '' : d.PDL);
         tr.querySelector('.c-sug').value = (d.SUG == null ? '' : d.SUG);
         tr.querySelector('.c-pbx').value = (d.PBX == null ? '' : d.PBX);
-        tr.querySelector('.c-obs').value = (d.OBS == null ? '' : d.OBS);
+        tr.querySelector('.c-obs').textContent = (d.OBS == null ? '' : d.OBS);   // OBS read-only (como el legacy)
+        tr.dataset.obs = (d.OBS == null ? '' : d.OBS);
         tr.querySelector('.c-sug').addEventListener('input', () => this.recalc());
         tr.querySelector('.c-pbx').addEventListener('input', () => this.recalc());
         tb.appendChild(tr);
@@ -145,7 +146,7 @@ const Q = {
     collect() {
         var out = [];
         this.el('tblLin').querySelectorAll('tbody tr').forEach(tr => {
-            out.push({ CODPRC: tr.dataset.codprc, PDL: tr.dataset.pdl, SUG: tr.querySelector('.c-sug').value, PBX: tr.querySelector('.c-pbx').value, OBS: tr.querySelector('.c-obs').value });
+            out.push({ CODPRC: tr.dataset.codprc, PDL: tr.dataset.pdl, SUG: tr.querySelector('.c-sug').value, PBX: tr.querySelector('.c-pbx').value, OBS: tr.dataset.obs });
         });
         return out;
     },

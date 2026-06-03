@@ -20,7 +20,7 @@ module_head('Presupuestos PTP — Alta / Modificación', 'bi-cash-coin', $tb);
 ?>
 <link href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css" rel="stylesheet">
 <link href="../abm/assets/css/abm.css" rel="stylesheet">
-<style>#tblLin input{text-align:right} #tblLin input.c-obs{text-align:left} #tblLin td.calc{text-align:right;font-variant-numeric:tabular-nums}</style>
+<style>#tblLin input{text-align:right} #tblLin td.calc{text-align:right;font-variant-numeric:tabular-nums} #tblLin td.c-obs{max-width:16rem;white-space:normal}</style>
 
 <form id="mainForm" class="mode-view" autocomplete="off" data-keynav data-keynav-submit="#btnGuardar">
   <div class="card mb-3"><div class="card-body">
@@ -123,7 +123,7 @@ module_head('Presupuestos PTP — Alta / Modificación', 'bi-cash-coin', $tb);
     <td><input type="text" class="form-control form-control-sm c-pbx"></td>
     <td class="calc ibx"></td>
     <td class="calc net fw-medium"></td>
-    <td><input type="text" class="form-control form-control-sm c-obs" maxlength="255"></td>
+    <td class="c-obs small text-muted"></td>
   </tr>
 </template>
 
@@ -132,5 +132,5 @@ module_foot('
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
-<script src="assets/js/presupuesto_edit.js?v=4"></script>
+<script src="assets/js/presupuesto_edit.js?v=5"></script>
 ');
