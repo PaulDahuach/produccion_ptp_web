@@ -107,3 +107,7 @@ a.kpi:hover { transform:translateY(-2px); box-shadow:0 8px 22px -8px var(--c); }
 .iwk-img-box { height:160px; border:1px dashed var(--bs-border-color); border-radius:.375rem;
     display:flex; align-items:center; justify-content:center; overflow:hidden; background:var(--bs-body-bg); }
 .iwk-img-box img { max-width:100%; max-height:100%; object-fit:contain; }
+
+/* Campo que permanece editable aunque el form esté en modo-vista (ej: A Remitir en Entrega).
+   !important porque abm.css carga después con la misma especificidad y pondría pointer-events:none. */
+.fc-form.mode-view .keep-editable { pointer-events:auto !important; opacity:1 !important; }
