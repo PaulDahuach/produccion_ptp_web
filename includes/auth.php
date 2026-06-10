@@ -75,6 +75,96 @@ function auth_require_admin() {
     }
 }
 
+/* ─────────────────────────── Restricciones de menú (lista negra) ───────────────────────────
+ * Porta el rutAccesoUsuario del Menú legacy: TODO habilitado SALVO lo que el usuario tenga cargado en
+ * [Tbl Usuarios Menu] (CODUSR + CODMEN). Acá las opciones se identifican por CODMEN (entero; produccion
+ * no tiene OPTMEN). Se aplica al menú del dashboard Y al acceso por URL. Cada entrada del menú (config
+ * 'menu') declara su 'opt' = CODMEN del legacy; las entradas sin 'opt' (módulos web sin equivalente
+ * legacy) NUNCA se restringen. Los admins (config admin_users) quedan exentos. */
+
+/** CODMEN restringidos del usuario actual (assoc codmen=>true). Cacheado por request. Sistemas sin las
+ *  tablas Usuarios Menu / Menu → vacío = sin restricción. */
+function auth_denied_opts() {
+    static $cache = null;
+    if ($cache !== null) return $cache;
+    $cache = array();
+    if (!auth_logged_in()) return $cache;
+    $uid = intval($_SESSION['uid']);
+    try {
+        foreach (db_query("SELECT CODMEN FROM [Tbl Usuarios Menu] WHERE CODUSR=$uid;") as $r) {
+            $o = trim((string) $r['CODMEN']);
+            if ($o !== '') $cache[$o] = true;
+        }
+    } catch (Exception $e) { $cache = array(); }
+    return $cache;
+}
+
+/** ¿La opción (CODMEN) está restringida para el usuario actual? Admins exentos (como "ADMINISTRADOR"). */
+function auth_opt_denied($opt) {
+    if ($opt === null || $opt === '') return false;
+    if (auth_is_admin()) return false;
+    $d = auth_denied_opts();
+    return isset($d[(string) $opt]);
+}
+
+/** Clave 'dir|disc' de una URL de módulo (disc = m|modo|r si está). Une el menú con el request. */
+function _auth_url_key($path, $query) {
+    if (!preg_match('#/modules/([^/?]+)#', (string) $path, $mm)) return '';
+    $disc = '';
+    if ($query) { parse_str($query, $q);
+        foreach (array('m', 'modo', 'r') as $d) if (isset($q[$d]) && $q[$d] !== '') { $disc = $d . '=' . $q[$d]; break; } }
+    return $mm[1] . '|' . $disc;
+}
+
+/** Mapa 'dir|disc' → CODMEN, derivado del menú (config). */
+function _auth_opt_map() {
+    static $map = null;
+    if ($map !== null) return $map;
+    $map = array();
+    $menu = sys('menu', array());
+    if (is_array($menu)) foreach ($menu as $cards) {
+        if (!is_array($cards)) continue;
+        foreach ($cards as $it) {
+            if (empty($it['url']) || empty($it['opt'])) continue;
+            $p = parse_url($it['url']);
+            $k = _auth_url_key(isset($p['path']) ? $p['path'] : '', isset($p['query']) ? $p['query'] : '');
+            if ($k !== '') $map[$k] = $it['opt'];
+        }
+    }
+    return $map;
+}
+
+/** CODMEN del request actual (o '' si el módulo no mapea a una opción del legacy). */
+function auth_current_opt() {
+    $sn = isset($_SERVER['SCRIPT_NAME']) ? $_SERVER['SCRIPT_NAME'] : '';
+    if (strpos($sn, '/modules/') === false) return '';
+    $q = '';
+    foreach (array('m', 'modo', 'r') as $d) {   // discriminador (GET o POST)
+        $v = isset($_GET[$d]) ? $_GET[$d] : (isset($_POST[$d]) ? $_POST[$d] : null);
+        if ($v !== null && $v !== '') { $q = $d . '=' . $v; break; }
+    }
+    $map = _auth_opt_map();
+    $key = _auth_url_key($sn, $q);
+    if ($key !== '' && isset($map[$key])) return $map[$key];
+    if (preg_match('#/modules/([^/?]+)#', $sn, $mm) && isset($map[$mm[1] . '|'])) return $map[$mm[1] . '|'];
+    return '';
+}
+
+/** Gate automático de acceso por URL: bloquea si la opción del request está restringida. */
+function auth_gate_url() {
+    if (!auth_logged_in()) return;
+    $opt = auth_current_opt();
+    if ($opt === '' || !auth_opt_denied($opt)) return;
+    http_response_code(403);
+    $sn = isset($_SERVER['SCRIPT_NAME']) ? $_SERVER['SCRIPT_NAME'] : '';
+    if (strpos($sn, 'api') !== false) {
+        header('Content-Type: application/json; charset=utf-8');
+        die(json_encode(array('ok' => false, 'error' => 'Acceso restringido a esta opción.')));
+    }
+    die('<!doctype html><meta charset="utf-8"><div style="font-family:system-ui;padding:2rem;color:#b91c1c">'
+      . 'Acceso restringido. No ten&eacute;s permiso para esta opci&oacute;n.</div>');
+}
+
 /** Sectores que puede operar el usuario actual (config 'sector_login'). */
 function auth_sectors() {
     $sl = sys('sector_login');
@@ -125,3 +215,7 @@ function auth_logout() {
     $_SESSION = [];
     session_destroy();
 }
+
+// Gate de acceso por URL (lista negra Tbl Usuarios Menu, porta rutAccesoUsuario del Menú legacy).
+// Sólo afecta /modules/*; no-op sin sesión o si la opción no está restringida.
+auth_gate_url();

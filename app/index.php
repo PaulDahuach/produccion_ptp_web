@@ -101,7 +101,11 @@ $saludo = $hh < 13 ? 'Buen día' : ($hh < 20 ? 'Buenas tardes' : 'Buenas noches'
         <div class="menu-panel" id="menuPanel">
             <?php $isAdmin = auth_is_admin(); foreach ($menu as $section => $cards):
                 $visibles = array();
-                foreach ($cards as $c) { if (empty($c['admin']) || $isAdmin) $visibles[] = $c; }
+                foreach ($cards as $c) {
+                    if (!empty($c['admin']) && !$isAdmin) continue;                    // tarjeta admin-only
+                    if (!empty($c['opt']) && auth_opt_denied($c['opt'])) continue;     // restricción de usuario (Tbl Usuarios Menu)
+                    $visibles[] = $c;
+                }
                 if (!$visibles) continue; ?>
             <section class="mpanel-group">
                 <div class="mpanel-head"><?= h($section) ?></div>
