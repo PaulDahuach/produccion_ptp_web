@@ -75,24 +75,21 @@ function auth_require_admin() {
     }
 }
 
-/* ─────────────────────────── Restricciones de menú (lista negra) ───────────────────────────
- * Porta el rutAccesoUsuario del Menú legacy: TODO habilitado SALVO lo que el usuario tenga cargado en
- * [Tbl Usuarios Menu] (CODUSR + CODMEN). Acá las opciones se identifican por CODMEN (entero; produccion
- * no tiene OPTMEN). Se aplica al menú del dashboard Y al acceso por URL. Cada entrada del menú (config
- * 'menu') declara su 'opt' = CODMEN del legacy; las entradas sin 'opt' (módulos web sin equivalente
- * legacy) NUNCA se restringen. Los admins (config admin_users) quedan exentos. */
+/* ─────────────────────────── Restricciones de menú (LISTA BLANCA) ───────────────────────────
+ * PRODUCCION = lista BLANCA (opuesto a administración). El rutAccesoUsuario del Menú legacy deshabilita
+ * TODAS las opciones y luego HABILITA sólo los CODMEN que el usuario tiene en [Tbl Usuarios Menu]. O sea
+ * las filas = lo PERMITIDO. Acá las opciones se identifican por CODMEN (entero; produccion no tiene
+ * OPTMEN). Una entrada del menú con 'opt'=CODMEN se ve sólo si ese CODMEN está en la lista del usuario;
+ * las entradas SIN 'opt' (consultas web nativas, sin equivalente legacy) SIEMPRE se ven. Admins exentos.
+ * Flag 'menu_restrict' (default true) → en false desactiva todo (web permisiva). */
 
-/** CODMEN restringidos del usuario actual (assoc codmen=>true). Cacheado por request. Sistemas sin las
- *  tablas Usuarios Menu / Menu → vacío = sin restricción. */
-function auth_denied_opts() {
+/** CODMEN PERMITIDOS del usuario actual (assoc codmen=>true), de [Tbl Usuarios Menu]. Cacheado por
+ *  request. Sistemas sin las tablas → vacío. */
+function auth_allowed_opts() {
     static $cache = null;
     if ($cache !== null) return $cache;
     $cache = array();
     if (!auth_logged_in()) return $cache;
-    // Web PERMISIVA por defecto: produccion NO hereda las restricciones del legacy (el menú web es
-    // distinto/consolidado y arrastrarlas le esconde cosas a usuarios activos → frena la adopción).
-    // Para reactivar la lista negra [Tbl Usuarios Menu], poner 'menu_restrict' => true en config.
-    if (!sys('menu_restrict', false)) return $cache;
     $uid = intval($_SESSION['uid']);
     try {
         foreach (db_query("SELECT CODMEN FROM [Tbl Usuarios Menu] WHERE CODUSR=$uid;") as $r) {
@@ -103,12 +100,14 @@ function auth_denied_opts() {
     return $cache;
 }
 
-/** ¿La opción (CODMEN) está restringida para el usuario actual? Admins exentos (como "ADMINISTRADOR"). */
+/** ¿La opción (CODMEN) está restringida para el usuario actual? LISTA BLANCA: restringida si la entrada
+ *  TIENE 'opt' y ese CODMEN NO está en los permitidos. Sin 'opt' (web nativo) = nunca. Admin/flag exentos. */
 function auth_opt_denied($opt) {
-    if ($opt === null || $opt === '') return false;
+    if ($opt === null || $opt === '') return false;     // sin opt = consulta web nativa = siempre visible
     if (auth_is_admin()) return false;
-    $d = auth_denied_opts();
-    return isset($d[(string) $opt]);
+    if (!sys('menu_restrict', true)) return false;       // escape hatch: web permisiva si se desactiva
+    $allowed = auth_allowed_opts();
+    return !isset($allowed[(string) $opt]);              // restringida si NO está en la lista blanca
 }
 
 /** Clave 'dir|disc' de una URL de módulo (disc = m|modo|r si está). Une el menú con el request. */
