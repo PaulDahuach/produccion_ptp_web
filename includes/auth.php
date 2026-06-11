@@ -89,6 +89,10 @@ function auth_denied_opts() {
     if ($cache !== null) return $cache;
     $cache = array();
     if (!auth_logged_in()) return $cache;
+    // Web PERMISIVA por defecto: produccion NO hereda las restricciones del legacy (el menú web es
+    // distinto/consolidado y arrastrarlas le esconde cosas a usuarios activos → frena la adopción).
+    // Para reactivar la lista negra [Tbl Usuarios Menu], poner 'menu_restrict' => true en config.
+    if (!sys('menu_restrict', false)) return $cache;
     $uid = intval($_SESSION['uid']);
     try {
         foreach (db_query("SELECT CODMEN FROM [Tbl Usuarios Menu] WHERE CODUSR=$uid;") as $r) {
