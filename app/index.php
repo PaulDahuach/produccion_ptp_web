@@ -4,6 +4,7 @@ require_once __DIR__ . '/../includes/helpers.php';
 require_once __DIR__ . '/../includes/track.php';
 auth_require_login();
 track_hit();   // registro de uso (adopción)
+auth_release_session();   // dashboard = solo lectura (KPIs); libera el lock de sesión para no bloquear otras pestañas
 
 $name    = sys('short_name', sys('name'));
 $full    = sys('name');

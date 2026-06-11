@@ -21,6 +21,15 @@ function auth_sector_login() {
     return !empty(sys('sector_login'));
 }
 
+/** Libera el lock del archivo de sesión (session_write_close) una vez leída la sesión. Para endpoints de
+ *  SOLO LECTURA largos: PHP toma un lock EXCLUSIVO del archivo de sesión en session_start() por TODA la
+ *  request, así que mientras una consulta tarda, las OTRAS pestañas del MISMO usuario quedan bloqueadas en
+ *  su session_start() esperando este lock (medido: víctimas con php_ms alto y db≈0). Cerrarlo acá las
+ *  destraba. $_SESSION sigue legible (sólo no se puede ESCRIBIR después → no usar si el endpoint escribe). */
+function auth_release_session() {
+    if (session_status() === PHP_SESSION_ACTIVE) @session_write_close();
+}
+
 /** True si hay sesión iniciada. Robusto ante uid=0 (operarios pueden tener CODOPR=0). */
 function auth_logged_in() {
     return isset($_SESSION['uid']) && $_SESSION['uid'] !== '' && $_SESSION['uid'] !== null;
