@@ -38,12 +38,19 @@
             if (!j.ok) { cont.innerHTML = ''; return; }
             cont.innerHTML = j.data.map(function (r) {
                 return '<div class="col-6 col-md-3 col-lg-2">' +
-                    '<div class="card"><div class="card-body py-2 px-3">' +
-                    '<div class="small text-muted text-truncate" title="' + esc(r.ETAPA) + '">' + esc(r.ETAPA) + '</div>' +
+                    '<div class="card etapa-card" style="cursor:pointer" data-etapa="' + esc(r.CODETA) + '" title="Ver detalle de ' + esc(r.ETAPA) + '"><div class="card-body py-2 px-3">' +
+                    '<div class="small text-muted text-truncate">' + esc(r.ETAPA) + '</div>' +
                     '<div class="fw-bold">' + n(r.TOTAL_ORDENES) + ' <span class="text-muted fw-normal small">órd.</span></div>' +
                     '<div class="small text-muted">' + miles(r.TOTAL_PRENDAS) + ' prendas</div>' +
                     '</div></div></div>';
             }).join('');
+            // tarjeta clickeable → drill-down a esa etapa
+            cont.querySelectorAll('.etapa-card').forEach(function (el) {
+                el.addEventListener('click', function () {
+                    document.getElementById('fEtapa').value = el.dataset.etapa;
+                    load();
+                });
+            });
         } catch (e) { cont.innerHTML = ''; }
     }
 
@@ -70,9 +77,20 @@
     }
 
     function load() {
-        loadResumen(); loadList();
+        loadResumen();
         var b = document.getElementById('btnImprimir');
         if (b) b.href = 'print.php?' + params().toString();
+        // El detalle (todas las órdenes activas) son ~13k filas con DateDiff por fila → 45s en Access.
+        // Sólo lo cargamos con un filtro (etapa / fecha / texto); sin filtro mostramos el resumen.
+        var hasFilter = document.getElementById('fEtapa').value
+            || document.getElementById('fDesde').value.trim()
+            || document.getElementById('fHasta').value.trim()
+            || document.getElementById('fq').value.trim();
+        if (hasFilter) { loadList(); }
+        else {
+            if (table) { table.clear().draw(); }
+            document.getElementById('resumen').textContent = 'Elegí una etapa (tarjeta de arriba) o aplicá un filtro para ver el detalle.';
+        }
     }
 
     document.getElementById('btnFiltrar').addEventListener('click', load);
