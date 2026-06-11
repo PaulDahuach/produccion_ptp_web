@@ -57,17 +57,22 @@ function listar() {
     ok(db_query($sql));
 }
 
-/** Resumen por etapa: total de órdenes y de prendas (respeta filtros). */
+/** Resumen por etapa: total de órdenes y de prendas (respeta filtros). El GROUP BY se hace sobre una
+ *  sola tabla (Ordenes); la etapa se mapea en PHP. Clientes/Marcas sólo se joinean si hay búsqueda por
+ *  texto (única condición que los usa) → al abrir (sin texto) no hay joins sobre las ~13k órdenes. */
 function resumen() {
     filtros($where);
-    $sql = "SELECT E.DENETA AS ETAPA, O.CODETA, Count(O.NUMODP) AS TOTAL_ORDENES, Sum(O.CANODP) AS TOTAL_PRENDAS
-    FROM ((([Tbl Ordenes De Proceso] AS O
-       INNER JOIN [Tbl Clientes] AS C ON O.CODCLI = C.CODCLI)
-       INNER JOIN [Tbl Marcas] AS M ON O.CODMAR = M.CODMAR)
-       INNER JOIN [Tbl Etapas] AS E ON O.CODETA = E.CODETA)
-    WHERE " . implode(' AND ', $where) . "
-    GROUP BY E.DENETA, O.CODETA ORDER BY O.CODETA;";
-    ok(db_query($sql));
+    $q = trim((isset($_GET['q']) ? $_GET['q'] : ''));
+    $from = ($q !== '')
+        ? "(([Tbl Ordenes De Proceso] AS O INNER JOIN [Tbl Clientes] AS C ON O.CODCLI=C.CODCLI) INNER JOIN [Tbl Marcas] AS M ON O.CODMAR=M.CODMAR)"
+        : "[Tbl Ordenes De Proceso] AS O";
+    $rows = db_query("SELECT O.CODETA, Count(O.NUMODP) AS TOTAL_ORDENES, Sum(O.CANODP) AS TOTAL_PRENDAS
+        FROM $from WHERE " . implode(' AND ', $where) . " GROUP BY O.CODETA ORDER BY O.CODETA;");
+    $den = array();
+    foreach (db_query("SELECT CODETA, DENETA FROM [Tbl Etapas];") as $e) $den[(int) $e['CODETA']] = $e['DENETA'];
+    $out = array();
+    foreach ($rows as $r) { $r['ETAPA'] = isset($den[(int) $r['CODETA']]) ? $den[(int) $r['CODETA']] : ('Etapa ' . $r['CODETA']); $out[] = $r; }
+    ok($out);
 }
 
 function etapas() {
