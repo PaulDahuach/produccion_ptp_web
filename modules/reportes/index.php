@@ -14,10 +14,11 @@ module_head($def['titulo'], (isset($def['icono']) ? $def['icono'] : 'bi-bar-char
     '<button id="btnPrint" class="btn btn-outline-light btn-sm ms-1"><i class="bi bi-printer me-1"></i>Imprimir</button>');
 ?>
 <link href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css" rel="stylesheet">
-<script>window.REP_R = <?= json_encode($r) ?>; window.REP_TIT = <?= json_encode($def['titulo']) ?>;</script>
+<script>window.REP_R = <?= json_encode($r) ?>; window.REP_TIT = <?= json_encode($def['titulo']) ?>; window.REP_FILTROS = <?= json_encode(isset($def['filtros']) ? $def['filtros'] : []) ?>;</script>
 
 <div class="card">
   <div class="card-body">
+    <div id="repFiltros" class="d-flex align-items-end gap-2 mb-2 flex-wrap"></div>
     <span class="text-muted small" id="resumen">—</span>
     <table id="tbl" class="table table-sm table-striped table-hover w-100 mt-2"><thead><tr id="thead"></tr></thead><tbody></tbody></table>
   </div>
@@ -28,5 +29,5 @@ module_foot('
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
-<script src="assets/js/reportes.js"></script>
+<script src="assets/js/reportes.js?v=2"></script>
 ');

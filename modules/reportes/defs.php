@@ -38,9 +38,12 @@ return [
     ],
     'en_administracion' => [
         'titulo' => 'En Administración (pendientes de remito)', 'icono' => 'bi-inboxes',
-        'sql' => "SELECT O.NUMODP AS [ODP], O.FDDODP AS [Definido], C.DENCLI AS [Cliente], M.DENMAR AS [Marca],
+        // La pila en administración (CODETA=120) es enorme (nunca se facturan) → cap a 500 recientes
+        // + filtro opcional por cliente, para que cargue rápido y sea usable.
+        'filtros' => [['param' => 'cli', 'label' => 'Cliente contiene', 'tipo' => 'text', 'sql' => 'C.DENCLI LIKE {V}']],
+        'sql' => "SELECT TOP 500 O.NUMODP AS [ODP], O.FDDODP AS [Definido], C.DENCLI AS [Cliente], M.DENMAR AS [Marca],
                     Pre.DENPRE AS [Prenda], O.CANODP AS [Cantidad], O.CFDODP AS [Despachado]
-                  $JOIN WHERE O.CODETA=120 ORDER BY O.NUMODP DESC;",
+                  $JOIN WHERE O.CODETA=120 {F} ORDER BY O.NUMODP DESC;",
         'fechas' => ['Definido'],
     ],
     'ultimas_recibidas' => [
@@ -64,6 +67,8 @@ return [
     ],
     'por_ptp' => [
         'titulo' => 'Órdenes por PTP', 'icono' => 'bi-list-check',
+        // Es "las órdenes de un pedido" → requiere un PTP (si no, traía las ~37k órdenes de todos).
+        'filtros' => [['param' => 'ptp', 'label' => 'PTP Nº', 'tipo' => 'int', 'req' => true, 'sql' => 'O.NUMPTP = {V}']],
         'sql' => "SELECT O.NUMPTP AS [PTP], O.NUMODP AS [ODP], O.FDRODP AS [Recibido], C.DENCLI AS [Cliente],
                     M.DENMAR AS [Marca], Pre.DENPRE AS [Prenda], O.CANODP AS [Cantidad], E.DENETA AS [Etapa]
                   FROM (((([Tbl Ordenes De Proceso] AS O
@@ -71,7 +76,7 @@ return [
                     LEFT JOIN [Tbl Marcas] AS M ON O.CODMAR=M.CODMAR)
                     LEFT JOIN [Tbl Prendas] AS Pre ON O.CODPR1=Pre.CODPRE)
                     LEFT JOIN [Tbl Etapas] AS E ON O.CODETA=E.CODETA)
-                  WHERE O.CODETA>0 AND O.NUMPTP>0 ORDER BY O.NUMPTP DESC, O.NUMODP;",
+                  WHERE O.CODETA>0 AND O.NUMPTP>0 {F} ORDER BY O.NUMPTP DESC, O.NUMODP;",
         'fechas' => ['Recibido'],
     ],
     'resumen_etapas' => [
