@@ -63,6 +63,7 @@ return [
         ['label' => 'Estadísticas de Uso',        'desc' => 'Adopción: páginas, usuarios, máquinas', 'icon' => 'bi-graph-up-arrow', 'url' => '/modules/uso/', 'admin' => true],
         ['label' => 'Performance',                'desc' => 'Tiempos por módulo/query — detectar cuellos de botella y cuelgues', 'icon' => 'bi-speedometer2', 'url' => '/modules/perf/', 'admin' => true],
         ['label' => 'Clonar Usuario',             'desc' => 'Crear un usuario con el mismo acceso que otro', 'icon' => 'bi-person-plus', 'url' => '/modules/clonar_usuario/', 'admin' => true],
+        ['label' => 'Permisos de Usuario',        'desc' => 'Habilitar/deshabilitar opciones del menú por usuario', 'icon' => 'bi-shield-lock', 'url' => '/modules/permisos/', 'admin' => true],
     ],
     'Maestros' => [
         ['label' => 'Clientes',  'desc' => 'Ficha + ABM',           'icon' => 'bi-people',        'url' => '/modules/abm/?m=clientes', 'opt' => 150],
