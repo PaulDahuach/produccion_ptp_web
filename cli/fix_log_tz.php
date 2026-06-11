@@ -7,6 +7,12 @@
  * Antes de tocar cada archivo hace un backup `<archivo>.bak`. IDEMPOTENTE: si ya existe el .bak, saltea
  * ese archivo (para no restar dos veces si lo corrés de nuevo).
  *
+ * ⚠️ ADVERTENCIA: usar SÓLO sobre un archivo escrito ENTERAMENTE en UTC (todas sus filas anteriores al
+ * deploy del fix de timezone en db.php). Si el archivo está MEZCLADO (filas viejas en UTC + filas nuevas
+ * ya en ART, porque cruza el momento del deploy), este script les resta 3h también a las que ya estaban
+ * bien → las rompe. Para un archivo mezclado, lo correcto es archivarlo y arrancar uno nuevo (que se
+ * generará 100% en ART con el db.php ya deployado), NO correr este script.
+ *
  * Uso (CLI):
  *   php fix_log_tz.php [carpeta_logs] [horas]
  *     carpeta_logs : default = ../logs respecto de este script (si existe), si no el dir actual.
