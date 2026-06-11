@@ -68,6 +68,12 @@ function clonar() {
         throw $e;
     }
 
+    // Permisos WEB (best-effort, fuera de la transacción; [Tbl Usuarios Menu Web] puede no existir aún).
+    try {
+        db_exec("INSERT INTO [Tbl Usuarios Menu Web] (CODUSR, OPTWEB) "
+            . "SELECT $uid, OPTWEB FROM [Tbl Usuarios Menu Web] WHERE CODUSR = $src;");
+    } catch (Exception $e) { /* tabla web inexistente → ignorar */ }
+
     $n = db_row("SELECT COUNT(*) AS N FROM [Tbl Usuarios Menu] WHERE CODUSR = $uid;");
     ok(array(
         'uid'      => $uid,

@@ -104,7 +104,8 @@ $saludo = $hh < 13 ? 'Buen día' : ($hh < 20 ? 'Buenas tardes' : 'Buenas noches'
                 $visibles = array();
                 foreach ($cards as $c) {
                     if (!empty($c['admin']) && !$isAdmin) continue;                    // tarjeta admin-only
-                    if (!empty($c['opt']) && auth_opt_denied($c['opt'])) continue;     // restricción de usuario (Tbl Usuarios Menu)
+                    if (!empty($c['opt']) && auth_opt_denied($c['opt'])) continue;     // restricción legacy (Tbl Usuarios Menu)
+                    if (!empty($c['optweb']) && auth_optweb_denied($c['optweb'])) continue; // restricción web (Tbl Usuarios Menu Web)
                     $visibles[] = $c;
                 }
                 if (!$visibles) continue; ?>

@@ -119,6 +119,37 @@ function auth_opt_denied($opt) {
     return !isset($allowed[(string) $opt]);              // restringida si NO está en la lista blanca
 }
 
+/** OPTWEB PERMITIDOS del usuario, de [Tbl Usuarios Menu Web] (canal WEB-ONLY, el legacy no la lee). Cacheado.
+ *  Devuelve null si la tabla NO existe todavía (→ fail-open: no se restringe nada hasta crearla). */
+function auth_allowed_web() {
+    static $cache = false;   // false = sin calcular · null = tabla inexistente · array = set permitido
+    if ($cache !== false) return $cache;
+    if (!auth_logged_in()) { $cache = array(); return $cache; }
+    $uid = intval($_SESSION['uid']);
+    try {
+        $set = array();
+        foreach (db_query("SELECT OPTWEB FROM [Tbl Usuarios Menu Web] WHERE CODUSR = $uid;") as $r) {
+            $k = trim((string) $r['OPTWEB']);
+            if ($k !== '') $set[$k] = true;
+        }
+        $cache = $set;
+    } catch (Exception $e) {
+        $cache = null;   // la tabla no existe (aún) → fail-open
+    }
+    return $cache;
+}
+
+/** ¿La opción WEB-native (OPTWEB) está restringida? LISTA BLANCA en [Tbl Usuarios Menu Web]: restringida si
+ *  NO está en los permitidos del usuario. Admin/flag exentos. Tabla inexistente → no restringe (fail-open). */
+function auth_optweb_denied($optweb) {
+    if ($optweb === null || $optweb === '') return false;
+    if (auth_is_admin()) return false;
+    if (!sys('menu_restrict', true)) return false;
+    $w = auth_allowed_web();
+    if ($w === null) return false;                       // tabla no creada → fail-open
+    return !isset($w[(string) $optweb]);
+}
+
 /** Clave 'dir|disc' de una URL de módulo (disc = m|modo|r si está). Une el menú con el request. */
 function _auth_url_key($path, $query) {
     if (!preg_match('#/modules/([^/?]+)#', (string) $path, $mm)) return '';
@@ -128,26 +159,27 @@ function _auth_url_key($path, $query) {
     return $mm[1] . '|' . $disc;
 }
 
-/** Mapa 'dir|disc' → CODMEN, derivado del menú (config). */
-function _auth_opt_map() {
-    static $map = null;
-    if ($map !== null) return $map;
+/** Mapa 'dir|disc' → valor del campo ($field = 'opt' | 'optweb'), derivado del menú (config). */
+function _auth_field_map($field) {
+    static $maps = array();
+    if (isset($maps[$field])) return $maps[$field];
     $map = array();
     $menu = sys('menu', array());
     if (is_array($menu)) foreach ($menu as $cards) {
         if (!is_array($cards)) continue;
         foreach ($cards as $it) {
-            if (empty($it['url']) || empty($it['opt'])) continue;
+            if (empty($it['url']) || empty($it[$field])) continue;
             $p = parse_url($it['url']);
             $k = _auth_url_key(isset($p['path']) ? $p['path'] : '', isset($p['query']) ? $p['query'] : '');
-            if ($k !== '') $map[$k] = $it['opt'];
+            if ($k !== '') $map[$k] = $it[$field];
         }
     }
+    $maps[$field] = $map;
     return $map;
 }
 
-/** CODMEN del request actual (o '' si el módulo no mapea a una opción del legacy). */
-function auth_current_opt() {
+/** Valor del campo ($field='opt'|'optweb') del request actual (o '' si el módulo no mapea). */
+function auth_current_field($field) {
     $sn = isset($_SERVER['SCRIPT_NAME']) ? $_SERVER['SCRIPT_NAME'] : '';
     if (strpos($sn, '/modules/') === false) return '';
     $q = '';
@@ -155,18 +187,23 @@ function auth_current_opt() {
         $v = isset($_GET[$d]) ? $_GET[$d] : (isset($_POST[$d]) ? $_POST[$d] : null);
         if ($v !== null && $v !== '') { $q = $d . '=' . $v; break; }
     }
-    $map = _auth_opt_map();
+    $map = _auth_field_map($field);
     $key = _auth_url_key($sn, $q);
     if ($key !== '' && isset($map[$key])) return $map[$key];
     if (preg_match('#/modules/([^/?]+)#', $sn, $mm) && isset($map[$mm[1] . '|'])) return $map[$mm[1] . '|'];
     return '';
 }
 
-/** Gate automático de acceso por URL: bloquea si la opción del request está restringida. */
+/** (compat) CODMEN legacy del request actual. */
+function auth_current_opt() { return auth_current_field('opt'); }
+
+/** Gate automático de acceso por URL: bloquea si la opción del request está restringida (legacy O web). */
 function auth_gate_url() {
     if (!auth_logged_in()) return;
-    $opt = auth_current_opt();
-    if ($opt === '' || !auth_opt_denied($opt)) return;
+    $opt    = auth_current_field('opt');
+    $optweb = auth_current_field('optweb');
+    $blocked = ($opt !== '' && auth_opt_denied($opt)) || ($optweb !== '' && auth_optweb_denied($optweb));
+    if (!$blocked) return;
     http_response_code(403);
     $sn = isset($_SERVER['SCRIPT_NAME']) ? $_SERVER['SCRIPT_NAME'] : '';
     if (strpos($sn, 'api') !== false) {
