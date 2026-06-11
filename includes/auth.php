@@ -109,14 +109,18 @@ function auth_allowed_opts() {
     return $cache;
 }
 
-/** ¿La opción (CODMEN) está restringida para el usuario actual? LISTA BLANCA: restringida si la entrada
- *  TIENE 'opt' y ese CODMEN NO está en los permitidos. Sin 'opt' (web nativo) = nunca. Admin/flag exentos. */
+/** ¿La opción (CODMEN) está restringida para el usuario actual? LISTA BLANCA. FUENTE ÚNICA = la tabla WEB
+ *  [Tbl Usuarios Menu Web] (independencia total del legacy): el CODMEN viaja como clave string. Sólo si esa
+ *  tabla aún NO existe (ventana entre el deploy y correr crear_tabla_menu_web.php) cae al legacy. Admin/flag
+ *  exentos; sin 'opt' (web nativa sin gate) = nunca. */
 function auth_opt_denied($opt) {
-    if ($opt === null || $opt === '') return false;     // sin opt = consulta web nativa = siempre visible
+    if ($opt === null || $opt === '') return false;
     if (auth_is_admin()) return false;
-    if (!sys('menu_restrict', true)) return false;       // escape hatch: web permisiva si se desactiva
-    $allowed = auth_allowed_opts();
-    return !isset($allowed[(string) $opt]);              // restringida si NO está en la lista blanca
+    if (!sys('menu_restrict', true)) return false;
+    $w = auth_allowed_web();
+    if ($w !== null) return !isset($w[(string) $opt]);   // tabla web = fuente única (CODMEN como string)
+    $allowed = auth_allowed_opts();                       // fallback transitorio: tabla web no creada aún
+    return !isset($allowed[(string) $opt]);
 }
 
 /** OPTWEB PERMITIDOS del usuario, de [Tbl Usuarios Menu Web] (canal WEB-ONLY, el legacy no la lee). Cacheado.
